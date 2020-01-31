@@ -81,32 +81,34 @@ if __name__ == "__main__":
         x_test = x_test.reshape(-1, 28, 28, 1)
 
         # Load pre-trained model.
-        model = load_model("./model/model_mnist.h5")
+        model = load_model("./model/mnist_model_improvement-235-0.99.h5")
         model.summary()
+        exit()
 
-        # You can select some layers you want to test.
-        # layer_names = ["activation_1"]
-        # layer_names = ["activation_2"]
-        layer_names = ["activation_3"]
+        # # You can select some layers you want to test.
+        # # layer_names = ["activation_1"]
+        # # layer_names = ["activation_2"]
+        # layer_names = ["activation_3"]
 
-        # Load target set.
-        x_target = np.load("./adv/adv_mnist_{}.npy".format(args.target))
+        # # Load target set.
+        # x_target = np.load("./adv/adv_mnist_{}.npy".format(args.target))
 
     elif args.d == "cifar":
         (x_train, y_train), (x_test, y_test) = cifar10.load_data()
 
-        model = load_model("./model/model_cifar.h5")
-        model.summary()
+        model = load_model("./model/cifar_model_improvement-250-0.86.h5")
+        print(model.summary())
+        exit()
 
-        # layer_names = [
-        #     layer.name
-        #     for layer in model.layers
-        #     if ("activation" in layer.name or "pool" in layer.name)
-        #     and "activation_9" not in layer.name
-        # ]
-        layer_names = ["activation_6"]
+        # # layer_names = [
+        # #     layer.name
+        # #     for layer in model.layers
+        # #     if ("activation" in layer.name or "pool" in layer.name)
+        # #     and "activation_9" not in layer.name
+        # # ]
+        # layer_names = ["activation_6"]
 
-        x_target = np.load("./adv/adv_cifar_{}.npy".format(args.target))
+        # x_target = np.load("./adv/adv_cifar_{}.npy".format(args.target))
 
     x_train = x_train.astype("float32")
     x_train = (x_train / 255.0) - (1.0 - CLIP_MAX)

@@ -1,0 +1,2 @@
+# best model for mnist dataset: ./model/mnist_model_improvement-235-0.99.h5
+# best model for cifar dataset: ./model/

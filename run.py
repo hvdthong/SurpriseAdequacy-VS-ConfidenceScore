@@ -64,6 +64,12 @@ if __name__ == "__main__":
         type=bool,
         default=True,
     )
+    parser.add_argument(
+        "--layer",
+        "-layer",
+        help="Layer name",
+        type=str,
+    )
     args = parser.parse_args()
     assert args.d in ["mnist", "cifar"], "Dataset should be either 'mnist' or 'cifar'"
     assert args.lsa ^ args.dsa, "Select either 'lsa' or 'dsa'"

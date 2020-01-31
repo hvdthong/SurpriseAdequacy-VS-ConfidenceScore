@@ -7,12 +7,15 @@ import keras.backend as K
 from keras.datasets import mnist, cifar10
 from keras.utils import np_utils
 from keras.models import Sequential
-from keras.layers import Dense, Dropout, Activation, Flatten, Conv2D, MaxPooling2D
+from keras.layers import Dense, Dropout, Activation, Flatten, Conv2D, MaxPooling2D, BatchNormalization
 from keras.regularizers import l2
 from keras.callbacks import ModelCheckpoint
+from keras import regularizers
+from keras.optimizers import SGD
 
 CLIP_MIN = -0.5
 CLIP_MAX = 0.5
+weight_decay = 0.0005
 
 def train(args):
     if args.d == "mnist":
@@ -144,7 +147,7 @@ def train(args):
         verbose=0,
         validation_data=(x_test, y_test),
         callbacks=callbacks_list,
-    )    
+    )
 
 
 if __name__ == "__main__":

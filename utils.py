@@ -92,6 +92,10 @@ def load_file(path_file):
     return lines
 
 
+def convert_list_number_to_float(data):
+    return [float(d) for d in data]
+
+
 from os import listdir
 from os.path import isfile, join
 def load_all_files(path_folder):  

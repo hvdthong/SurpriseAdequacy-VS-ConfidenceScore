@@ -82,7 +82,7 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
     assert args.d in ["mnist", "cifar"], "Dataset should be either 'mnist' or 'cifar'"
-    assert args.lsa ^ args.dsa ^ args.conf ^ args.true_label, "Select either 'lsa' or 'dsa'"
+    assert args.lsa ^ args.dsa ^ args.conf ^ args.true_label ^ args.pred_label, "Select either 'lsa' or 'dsa' or etc."
     print(args)
 
     if args.d == "mnist":

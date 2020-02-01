@@ -92,5 +92,12 @@ Trainable params: 8,695,882
 Non-trainable params: 6,400
 ________________________________________________________________
 
+=================================================================
 # best model for mnist dataset: ./model/mnist_model_improvement-235-0.99.h5
 # best model for cifar dataset: ./model/cifar_model_improvement-491-0.88.h5
+=================================================================
+
+=================================================================
+# cifar dataset -- label
+0:'airplane', 1:'automobile', 2:'bird', 3:'cat', 4:'deer', 5:'dog', 6:'frog', 7:'horse', 8:'ship', 9:'truck'
+=================================================================

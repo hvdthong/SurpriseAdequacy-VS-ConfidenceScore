@@ -128,4 +128,9 @@ if __name__ == "__main__":
         y_test = np.argmax(y_test, axis=1)
         write_file(path_file='./metrics/{}_true_label.txt'.format(args.d), data=y_test)
 
+    if args.pred_label:
+        y_pred = model.predict(x_test)
+        y_pred = np.argmax(y_pred, axis=1)
+        write_file(path_file='./metrics/{}_pred_label.txt'.format(args.d), data=y_pred)
+
         

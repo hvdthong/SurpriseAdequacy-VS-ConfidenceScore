@@ -7,6 +7,7 @@ from keras.datasets import mnist, cifar10
 from keras.models import load_model, Model
 from sa import fetch_dsa, fetch_lsa, get_sc
 from utils import *
+from keras import utils
 
 CLIP_MIN = -0.5
 CLIP_MAX = 0.5
@@ -19,6 +20,15 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--dsa", "-dsa", help="Distance-based Surprise Adequacy", action="store_true"
+    )
+    parser.add_argument(
+        "--conf", "-conf", help="Confidence Score", action="store_true"
+    )
+    parser.add_argument(
+        "--true_label", "-true_label", help="True Label", action="store_true"
+    )
+    parser.add_argument(
+        "--pred_label", "-pred_label", help="Predicted Label", action="store_true"
     )
     parser.add_argument(
         "--target",
@@ -72,7 +82,7 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
     assert args.d in ["mnist", "cifar"], "Dataset should be either 'mnist' or 'cifar'"
-    assert args.lsa ^ args.dsa, "Select either 'lsa' or 'dsa'"
+    assert args.lsa ^ args.dsa ^ args.conf ^ args.true_label, "Select either 'lsa' or 'dsa'"
     print(args)
 
     if args.d == "mnist":
@@ -96,9 +106,26 @@ if __name__ == "__main__":
     x_test = (x_test / 255.0) - (1.0 - CLIP_MAX)
 
     if args.lsa:            
-        test_lsa = fetch_lsa(model, x_train, x_test, "test", [args.layer], args)        
-        write_file(path_file='./sa/lsa_{}_{}.txt'.format(args.d, args.layer), data=test_lsa)
+        test_lsa = fetch_lsa(model, x_train, x_test, "test", [args.layer], args)
+        write_file(path_file='./metrics/{}_lsa_{}.txt'.format(args.d, args.layer), data=test_lsa)
 
     if args.dsa:
-        test_dsa = fetch_dsa(model, x_train, x_test, "test", layer_names, args)
-        write_file(path_file='./sa/lsa_{}_{}.txt'.format(args.d, args.layer), data=test_dsa)
+        test_dsa = fetch_dsa(model, x_train, x_test, "test", [args.layer], args)
+        write_file(path_file='./metrics/{}_dsa_{}.txt'.format(args.d, args.layer), data=test_dsa)
+
+    if args.conf:
+        y_pred = model.predict(x_test)        
+        test_conf = list(np.amax(y_pred, axis=1))        
+        write_file(path_file='./metrics/{}_conf.txt'.format(args.d), data=test_conf)
+
+    if args.true_label:
+        if args.d == 'mnist' or args.d == 'cifar':
+            num_class = 10
+        else:
+            print('Please input the number of classes')
+            exit()
+        y_test = utils.to_categorical(y_test, num_class)        
+        y_test = np.argmax(y_test, axis=1)
+        write_file(path_file='./metrics/{}_true_label.txt'.format(args.d), data=y_test)
+
+        

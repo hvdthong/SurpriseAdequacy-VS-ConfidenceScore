@@ -1,11 +1,6 @@
 import argparse
-from utils import load_file, convert_list_number_to_float
+from utils import load_file, convert_list_number_to_float, convert_predict_and_true_to_binary
 from sklearn.metrics import roc_curve, auc
-
-
-def convert_predict_and_true_to_binary(predicted, true):
-    # if instances are labeled correct, labeled them as 1 otherwise 0
-    return [1 if p == t else 0 for p, t in zip(predicted, true)]
 
 
 if __name__ == '__main__':

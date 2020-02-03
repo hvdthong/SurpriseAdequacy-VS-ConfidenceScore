@@ -96,6 +96,11 @@ def convert_list_number_to_float(data):
     return [float(d) for d in data]
 
 
+def convert_predict_and_true_to_binary(predicted, true):
+    # if instances are labeled correct, labeled them as 1 otherwise 0
+    return [1 if p == t else 0 for p, t in zip(predicted, true)]
+
+
 from os import listdir
 from os.path import isfile, join
 def load_all_files(path_folder):  

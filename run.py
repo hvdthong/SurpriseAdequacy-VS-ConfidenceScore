@@ -97,8 +97,8 @@ if __name__ == "__main__":
     elif args.d == "cifar":
         (x_train, y_train), (x_test, y_test) = cifar10.load_data()
 
-        model = load_model("./model/cifar_model_improvement-250-0.86.h5")
-        model.summary()        
+        model = load_model("./model/cifar_model_improvement-491-0.88.h5")
+        model.summary()
 
     x_train = x_train.astype("float32")
     x_train = (x_train / 255.0) - (1.0 - CLIP_MAX)

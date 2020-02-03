@@ -22,6 +22,17 @@ def box_plot_metrics(binary_predicted_true, score, args):
                     correct.append(s)
                 else:
                     incorrect.append(s)
+        elif args.d == 'cifar' and args.lsa:
+            if s <= 1500:
+                if b == 1:
+                    correct.append(s)
+                else:
+                    incorrect.append(s)
+        else:
+            if b == 1:
+                correct.append(s)
+            else:
+                incorrect.append(s)
     print(len(correct), len(incorrect))
     
     if args.lsa:
@@ -66,6 +77,12 @@ if __name__ == '__main__':
 
     if args.d == 'mnist' and args.dsa:
         score_ = convert_list_number_to_float(load_file('./metrics/%s_dsa_activation_3.txt' % (args.d)))
+
+    if args.d == 'cifar' and args.lsa:
+        score_ = convert_list_number_to_float(load_file('./metrics/%s_lsa_activation_11.txt' % (args.d)))
+
+    if args.d == 'cifar' and args.dsa:
+        score_ = convert_list_number_to_float(load_file('./metrics/%s_dsa_activation_11.txt' % (args.d)))
 
     if args.conf:
         score_ = convert_list_number_to_float(load_file('./metrics/%s_conf.txt' % (args.d)))

@@ -4,7 +4,10 @@ from keras import backend
 import keras
 from keras.datasets import mnist, cifar10
 from keras.models import load_model
+
+# Using https://github.com/IBM/adversarial-robustness-toolbox to create adversarial examples
 from art.classifiers import KerasClassifier
+from art.attacks import FastGradientMethod
 import numpy as np
 
 CLIP_MIN = -0.5
@@ -40,7 +43,7 @@ if __name__ == '__main__':
         classifier = KerasClassifier(model=model, clip_values=(-0.5, 0.5), use_logits=False)
 
     if args.attack == 'fgsm':
-        attack = FastGradientMethod(classifier=classifier, eps=0.3, batch_size=64)
+        attack = FastGradientMethod(classifier=classifier, eps=0.75, eps_step=0.75, batch_size=64)
         x_test_adv = attack.generate(x=x_test)
 
     if args.attack == '':
@@ -52,7 +55,7 @@ if __name__ == '__main__':
 
     print("The normal validation accuracy is: {}".format(acc))
 
-    adv_pred = np.argmax(keras_model.predict(x_test_adv), axis = 1)
+    adv_pred = np.argmax(model.predict(x_test_adv), axis = 1)
     adv_acc =  np.mean(np.equal(adv_pred, y_test))
 
     print("The adversarial validation accuracy is: {}".format(adv_acc))

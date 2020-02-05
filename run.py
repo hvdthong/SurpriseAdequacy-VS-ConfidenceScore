@@ -31,6 +31,9 @@ if __name__ == "__main__":
         "--pred_label", "-pred_label", help="Predicted Label", action="store_true"
     )
     parser.add_argument(
+        "--pred_label", "-pred_label", help="Predicted Label", action="store_true"
+    )
+    parser.add_argument(
         "--target",
         "-target",
         help="Target input set (test or adversarial set)",

@@ -31,8 +31,18 @@ if __name__ == "__main__":
         "--pred_label", "-pred_label", help="Predicted Label", action="store_true"
     )
     parser.add_argument(
-        "--pred_label", "-pred_label", help="Predicted Label", action="store_true"
+        "--adv_lsa", "-adv_lsa", help="Used Adversarial Examples for Likelihood-based Surprise Adequacy", action="store_true"
     )
+    parser.add_argument(
+        "--adv_dsa", "-adv_dsa", help="Used Adversarial Examples for Distance-based Surprise Adequacy", action="store_true"
+    )
+    """We have five different attacks:
+        + Fast Gradient Sign Method (fgsm)
+        + Basic Iterative Method (bim-a, bim-b, or bim)
+        + Jacobian-based Saliency Map Attack (jsma)
+        + Carlini&Wagner (c+w)
+    """
+    parser.add_argument("--attack", "-attack", help="Define Attack Type", type=str, default="fgsm")
     parser.add_argument(
         "--target",
         "-target",
@@ -85,7 +95,8 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
     assert args.d in ["mnist", "cifar"], "Dataset should be either 'mnist' or 'cifar'"
-    assert args.lsa ^ args.dsa ^ args.conf ^ args.true_label ^ args.pred_label, "Select either 'lsa' or 'dsa' or etc."
+    assert args.attack in ["fgsm", "bim", 'jsma', 'c+w'], "Dataset should be either 'fgsm', 'bim', 'jsma', 'c+w'"
+    assert args.lsa ^ args.dsa ^ args.conf ^ args.true_label ^ args.pred_label ^ args.adv_lsa ^ args.adv_dsa, "Select either 'lsa' or 'dsa' or etc."
     print(args)
 
     if args.d == "mnist":
@@ -135,5 +146,8 @@ if __name__ == "__main__":
         y_pred = model.predict(x_test)
         y_pred = np.argmax(y_pred, axis=1)
         write_file(path_file='./metrics/{}_pred_label.txt'.format(args.d), data=y_pred)
+
+    if args.adv_lsa:
+        x_adv = np    
 
         

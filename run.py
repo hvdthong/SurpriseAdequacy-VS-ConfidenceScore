@@ -148,6 +148,14 @@ if __name__ == "__main__":
         write_file(path_file='./metrics/{}_pred_label.txt'.format(args.d), data=y_pred)
 
     if args.adv_lsa:
-        x_adv = np    
+        x_adv = np.load('./adv/{}_{}.npy'.format(args.d, args.attack))        
+        x_adv_lsa = fetch_lsa(model, x_train, x_adv, "adv_{}".format(args.attack), [args.layer], args)
+        write_file(path_file='./metrics/{}_adv_lsa_{}_{}.txt'.format(args.d, args.attack, args.layer), data=x_adv_lsa)
+
+    if args.adv_dsa:
+        x_adv = np.load('./adv/{}_{}.npy'.format(args.d, args.attack))        
+        x_adv_dsa = fetch_dsa(model, x_train, x_adv, "adv_{}".format(args.attack), [args.layer], args)
+        write_file(path_file='./metrics/{}_adv_dsa_{}_{}.txt'.format(args.d, args.attack, args.layer), data=x_adv_dsa)
+
 
         

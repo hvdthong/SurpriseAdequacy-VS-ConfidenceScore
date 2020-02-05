@@ -36,6 +36,9 @@ if __name__ == "__main__":
     parser.add_argument(
         "--adv_dsa", "-adv_dsa", help="Used Adversarial Examples for Distance-based Surprise Adequacy", action="store_true"
     )
+    parser.add_argument(
+        "--adv_conf", "-adv_conf", help="Used Adversarial Examples for Confidence Score", action="store_true"
+    )
     """We have five different attacks:
         + Fast Gradient Sign Method (fgsm)
         + Basic Iterative Method (bim-a, bim-b, or bim)
@@ -96,7 +99,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
     assert args.d in ["mnist", "cifar"], "Dataset should be either 'mnist' or 'cifar'"
     assert args.attack in ["fgsm", "bim", 'jsma', 'c+w'], "Dataset should be either 'fgsm', 'bim', 'jsma', 'c+w'"
-    assert args.lsa ^ args.dsa ^ args.conf ^ args.true_label ^ args.pred_label ^ args.adv_lsa ^ args.adv_dsa, "Select either 'lsa' or 'dsa' or etc."
+    assert args.lsa ^ args.dsa ^ args.conf ^ args.true_label ^ args.pred_label ^ args.adv_lsa ^ args.adv_dsa ^ args.adv_conf, "Select either 'lsa' or 'dsa' or etc."
     print(args)
 
     if args.d == "mnist":
@@ -153,9 +156,14 @@ if __name__ == "__main__":
         write_file(path_file='./metrics/{}_adv_lsa_{}_{}.txt'.format(args.d, args.attack, args.layer), data=x_adv_lsa)
 
     if args.adv_dsa:
-        x_adv = np.load('./adv/{}_{}.npy'.format(args.d, args.attack))        
+        x_adv = np.load('./adv/{}_{}.npy'.format(args.d, args.attack))
         x_adv_dsa = fetch_dsa(model, x_train, x_adv, "adv_{}".format(args.attack), [args.layer], args)
         write_file(path_file='./metrics/{}_adv_dsa_{}_{}.txt'.format(args.d, args.attack, args.layer), data=x_adv_dsa)
 
+    if args.adv_conf:
+        x_adv = np.load('./adv/{}_{}.npy'.format(args.d, args.attack))
+        x_adv_conf = model.predict(x_adv)
+        x_adv_conf = list(np.amax(x_adv_conf, axis=1))
+        write_file(path_file='./metrics/{}_adv_conf_{}.txt'.format(args.d, args.attack), data=x_adv_conf)
 
         

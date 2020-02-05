@@ -115,7 +115,7 @@ if __name__ == "__main__":
 
     if args.conf:
         y_pred = model.predict(x_test)        
-        test_conf = list(np.amax(y_pred, axis=1))        
+        test_conf = list(np.amax(y_pred, axis=1))
         write_file(path_file='./metrics/{}_conf.txt'.format(args.d), data=test_conf)
 
     if args.true_label:

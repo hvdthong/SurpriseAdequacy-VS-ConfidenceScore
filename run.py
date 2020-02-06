@@ -165,5 +165,3 @@ if __name__ == "__main__":
         x_adv_conf = model.predict(x_adv)
         x_adv_conf = list(np.amax(x_adv_conf, axis=1))
         write_file(path_file='./metrics/{}_adv_conf_{}.txt'.format(args.d, args.attack), data=x_adv_conf)
-
-        

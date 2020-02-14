@@ -54,9 +54,11 @@ def classify_adv_based_metrics(x_adv, x_test, args):
     for train_index, test_index in skf.split(x, y):        
         x_train, x_test = x[train_index], x[test_index]
         y_train, y_test = y[train_index], y[test_index]
-        roc_auc = round(roc_auc_classify(x=(x_train, x_test), y=(y_train, y_test), args=args), 3)
+        roc_auc = round(roc_auc_classify(x=(x_train, x_test), y=(y_train, y_test), args=args), 4)
         if args.clf_dsa:
-            print('ROC-AUC of dataset {} with attack {} for dsa: {}'.format(args.d, args.attack, roc_auc))
+            print('ROC-AUC of dataset {} with attack {} for distance-based surprise adequacy (dsa): {}'.format(args.d, args.attack, roc_auc))
+        if args.clf_conf:
+            print('ROC-AUC of dataset {} with attack {} for confidence score: {}'.format(args.d, args.attack, roc_auc))
         break
 
 
@@ -96,4 +98,10 @@ if __name__ == '__main__':
         elif args.d == 'cifar':
             x_adv = convert_list_number_to_float(load_file('./metrics/{}_adv_dsa_{}_activation_11.txt'.format(args.d, args.attack)))
             x_test = convert_list_number_to_float(load_file('./metrics/{}_dsa_activation_11.txt'.format(args.d)))
+        classify_adv_based_metrics(x_adv=x_adv, x_test=x_test, args=args)
+
+    if args.clf_conf:
+        if args.d == 'mnist' or args.d == 'cifar':
+            x_adv = convert_list_number_to_float(load_file('./metrics/{}_adv_conf_{}.txt'.format(args.d, args.attack)))
+            x_test = convert_list_number_to_float(load_file('./metrics/{}_conf.txt'.format(args.d)))        
         classify_adv_based_metrics(x_adv=x_adv, x_test=x_test, args=args)

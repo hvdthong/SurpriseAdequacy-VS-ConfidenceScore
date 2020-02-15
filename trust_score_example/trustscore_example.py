@@ -26,6 +26,7 @@ model.fit(X_digits[:1300], y_digits[:1300])
 
 # Get outputs on testing set.
 y_pred = model.predict(X_digits[1300:])
+
 # Initialize trust score.
 trust_model = trustscore.TrustScore()
 trust_model.fit(X_digits[:1300], y_digits[:1300])

@@ -73,6 +73,7 @@ if __name__ == '__main__':
         elif args.d == 'cifar':
             (x_train, y_train), (x_test, y_test) = cifar10.load_data()
             model = load_model("./model/cifar_model_improvement-491-0.88.h5")
+            y_train, y_test = y_train.flatten(), y_test.flatten()
         
         model.summary()
         
@@ -81,14 +82,33 @@ if __name__ == '__main__':
         x_test = x_test.astype("float32")
         x_test = (x_test / 255.0) - (1.0 - CLIP_MAX)
 
-        x_test_ats_layer = get_attention_layer(x=x_test, model=model, args=args)
+        y_pred = np.argmax(model.predict(x_test), axis=1)
+
         x_train_ats_layer = get_attention_layer(x=x_train, model=model, args=args)
+        x_test_ats_layer = get_attention_layer(x=x_test, model=model, args=args)        
 
         trust_model = trustscore.TrustScore()
         trust_model.fit(x_train_ats_layer, y_train)
 
-        trust_score = trust_model.get_score(x_test_ats_layer, y_test).tolist()
+        trust_score = trust_model.get_score(x_test_ats_layer, y_pred).tolist()        
         write_file(path_file='./metrics/{}_ts_{}.txt'.format(args.d, args.layer), data=trust_score)
+
+    elif args.adv_ts: 
+        if args.d == 'mnist':
+            (x_train, y_train), (x_test, y_test) = mnist.load_data()
+            x_train = x_train.reshape(-1, 28, 28, 1)
+            x_test = x_test.reshape(-1, 28, 28, 1)
+
+            # Load pre-trained model.
+            model = load_model("./model/mnist_model_improvement-235-0.99.h5")
+
+        elif args.d == 'cifar':
+            (x_train, y_train), (x_test, y_test) = cifar10.load_data()
+            model = load_model("./model/cifar_model_improvement-491-0.88.h5")
+            y_train, y_test = y_train.flatten(), y_test.flatten()
+
+        model.summary()
+        
 
 
         

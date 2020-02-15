@@ -40,6 +40,8 @@ def draw_surprise_inputs(binary_predicted_true, score, args):
         metric = 'dsa'
     if args.conf:
         metric = 'conf'
+    if args.ts:
+        metric = 'ts'
     
     # draw a line of ascending and descending 
     per_ascending = accuracy_surprise_inputs(df=df.sort_values(by=['score'], ascending=True), x_axis_tickles=x_axis_tickles)
@@ -62,9 +64,12 @@ if __name__ == '__main__':
     parser.add_argument(
         "--conf", "-conf", help="Confidence Score", action="store_true"
     )
+    parser.add_argument(
+        "--ts", "-ts", help="Trust Score", action="store_true"
+    )
     args = parser.parse_args()
     assert args.d in ["mnist", "cifar"], "Dataset should be either 'mnist' or 'cifar'"    
-    assert args.lsa ^ args.dsa ^ args.conf, "Select either 'lsa' or 'dsa' or etc."    
+    assert args.lsa ^ args.dsa ^ args.conf ^ args.ts, "Select either 'lsa' or 'dsa' or etc."    
     print(args)
 
     predicted = load_file('./metrics/%s_pred_label.txt' % (args.d))
@@ -83,5 +88,10 @@ if __name__ == '__main__':
 
     if args.conf:
         score_ = convert_list_number_to_float(load_file('./metrics/%s_conf.txt' % (args.d)))
+
+    if args.d == 'mnist' and args.ts:
+        score_ = convert_list_number_to_float(load_file('./metrics/%s_ts_activation_3.txt' % (args.d)))
+    if args.d == 'cifar' and args.ts:
+        score_ = convert_list_number_to_float(load_file('./metrics/%s_ts_activation_11.txt' % (args.d)))
     
     draw_surprise_inputs(binary_predicted_true=binary_predicted_true, score=score_, args=args)

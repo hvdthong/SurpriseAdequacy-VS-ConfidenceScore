@@ -1,7 +1,7 @@
 import argparse
 from utils import load_file, convert_list_number_to_float, convert_predict_and_true_to_binary
 from sklearn.metrics import roc_curve, auc
-
+import matplotlib.pyplot as plt
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -17,15 +17,19 @@ if __name__ == '__main__':
     if args.d == 'mnist':
         lsa = convert_list_number_to_float(load_file('./metrics/%s_lsa_activation_3.txt' % (args.d)))
         dsa = convert_list_number_to_float(load_file('./metrics/%s_dsa_activation_3.txt' % (args.d)))
+        ts = convert_list_number_to_float(load_file('./metrics/%s_ts_activation_3.txt' % (args.d)))
     
     if args.d == 'cifar':
         lsa = convert_list_number_to_float(load_file('./metrics/%s_lsa_activation_11.txt' % (args.d)))
         dsa = convert_list_number_to_float(load_file('./metrics/%s_dsa_activation_11.txt' % (args.d)))
+        ts = convert_list_number_to_float(load_file('./metrics/%s_ts_activation_11.txt' % (args.d)))
     
     binary_predicted_true = convert_predict_and_true_to_binary(predicted=predicted, true=true)
 
+    ################################################################################################################
     fpr_conf, tpr_conf, _ = roc_curve(binary_predicted_true, confidence)
     roc_auc_conf = auc(fpr_conf, tpr_conf)
+    ################################################################################################################
     
     ################################################################################################################
     # if we use the SA score, we should make it negative since it has the opposite meaning with the confidence score
@@ -40,16 +44,36 @@ if __name__ == '__main__':
     roc_auc_dsa = auc(fpr_dsa, tpr_dsa)
     ################################################################################################################
 
+    ################################################################################################################
+    fpr_ts, tpr_ts, _ = roc_curve(binary_predicted_true, ts)
+    roc_auc_ts = auc(fpr_ts, tpr_ts)
+    ################################################################################################################
+
     # method I: plt
-    import matplotlib.pyplot as plt
-    plt.title('Receiver Operating Characteristic')
-    plt.plot(fpr_conf, tpr_conf, 'b', label = 'AUC_conf = %0.2f' % roc_auc_conf)
-    plt.plot(fpr_lsa, tpr_lsa, 'c', label = 'AUC_lsa = %0.2f' % roc_auc_lsa)
-    plt.plot(fpr_dsa, tpr_dsa, 'g', label = 'AUC_dsa = %0.2f' % roc_auc_dsa)
-    plt.legend(loc = 'lower right')
-    plt.plot([0, 1], [0, 1],'r--')
-    plt.xlim([0, 1])
-    plt.ylim([0, 1.05])
-    plt.ylabel('True Positive Rate')
-    plt.xlabel('False Positive Rate')
-    plt.savefig('./results/%s_roc_curve.jpg' % (args.d))
+    if args.d == 'mnist':
+        plt.title('Receiver Operating Characteristic')
+        plt.plot(fpr_dsa, tpr_dsa, 'b', label = 'AUC_conf = %0.2f' % roc_auc_dsa) 
+        plt.plot(fpr_lsa, tpr_lsa, 'c', label = 'AUC_lsa = %0.2f' % roc_auc_lsa)
+        plt.plot(fpr_conf, tpr_conf, 'g', label = 'AUC_dsa = %0.2f' % roc_auc_conf) 
+        plt.plot(fpr_ts, tpr_ts, 'm', label = 'AUC_ts = %0.2f' % roc_auc_ts) 
+        plt.legend(loc = 'lower right')
+        plt.plot([0, 1], [0, 1],'r--')
+        plt.xlim([0, 1])
+        plt.ylim([0, 1.05])
+        plt.ylabel('True Positive Rate')
+        plt.xlabel('False Positive Rate')
+        plt.savefig('./results/%s_roc_curve.jpg' % (args.d))
+
+    if args.d == 'cifar':
+        plt.title('Receiver Operating Characteristic')
+        plt.plot(fpr_conf, tpr_conf, 'b', label = 'AUC_conf = %0.2f' % roc_auc_conf)
+        plt.plot(fpr_lsa, tpr_lsa, 'c', label = 'AUC_lsa = %0.2f' % roc_auc_lsa)
+        plt.plot(fpr_dsa, tpr_dsa, 'g', label = 'AUC_dsa = %0.2f' % roc_auc_dsa)
+        plt.plot(fpr_ts, tpr_ts, 'm', label = 'AUC_ts = %0.2f' % roc_auc_ts) 
+        plt.legend(loc = 'lower right')
+        plt.plot([0, 1], [0, 1],'r--')
+        plt.xlim([0, 1])
+        plt.ylim([0, 1.05])
+        plt.ylabel('True Positive Rate')
+        plt.xlabel('False Positive Rate')
+        plt.savefig('./results/%s_roc_curve.jpg' % (args.d))

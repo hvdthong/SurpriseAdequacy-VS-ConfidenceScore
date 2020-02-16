@@ -76,6 +76,9 @@ if __name__ == '__main__':
     parser.add_argument(
         "--clf_conf", "-clf_conf", help="Classification based on Confidence Score", action="store_true"
     )
+    parser.add_argument(
+        "--clf_ts", "-clf_ts", help="Classification based on Trust Score", action="store_true"
+    )
     """We have five different attacks:
         + Fast Gradient Sign Method (fgsm)
         + Basic Iterative Method (bim-a, bim-b, or bim)
@@ -88,7 +91,7 @@ if __name__ == '__main__':
     assert args.d in ["mnist", "cifar"], "Dataset should be either 'mnist' or 'cifar'"
     assert args.alg in ["lr"], "Algorithm Classification"
     assert args.attack in ["fgsm", "bim", 'jsma', 'c+w'], "Dataset should be either 'fgsm', 'bim', 'jsma', 'c+w'"
-    assert args.clf_dsa ^ args.clf_lsa ^ args.clf_conf, "Select classification based on metrics (i.e., dsa, lsa, conf, etc.)"
+    assert args.clf_dsa ^ args.clf_lsa ^ args.clf_conf ^ args.clf_ts, "Select classification based on metrics (i.e., dsa, lsa, conf, etc.)"
     print(args)
 
     if args.clf_dsa:        

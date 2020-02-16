@@ -59,6 +59,8 @@ def classify_adv_based_metrics(x_adv, x_test, args):
             print('ROC-AUC of dataset {} with attack {} for distance-based surprise adequacy (dsa): {}'.format(args.d, args.attack, roc_auc))
         if args.clf_conf:
             print('ROC-AUC of dataset {} with attack {} for confidence score: {}'.format(args.d, args.attack, roc_auc))
+        if args.clf_ts:
+            print('ROC-AUC of dataset {} with attack {} for trust score: {}'.format(args.d, args.attack, roc_auc))
         break
 
 
@@ -107,4 +109,13 @@ if __name__ == '__main__':
         if args.d == 'mnist' or args.d == 'cifar':
             x_adv = convert_list_number_to_float(load_file('./metrics/{}_adv_conf_{}.txt'.format(args.d, args.attack)))
             x_test = convert_list_number_to_float(load_file('./metrics/{}_conf.txt'.format(args.d)))        
+        classify_adv_based_metrics(x_adv=x_adv, x_test=x_test, args=args)
+
+    if args.clf_ts:        
+        if args.d == 'mnist':
+            x_adv = convert_list_number_to_float(load_file('./metrics/{}_adv_ts_{}_activation_3.txt'.format(args.d, args.attack)))
+            x_test = convert_list_number_to_float(load_file('./metrics/{}_ts_activation_3.txt'.format(args.d)))
+        elif args.d == 'cifar':
+            x_adv = convert_list_number_to_float(load_file('./metrics/{}_adv_ts_{}_activation_11.txt'.format(args.d, args.attack)))
+            x_test = convert_list_number_to_float(load_file('./metrics/{}_ts_activation_11.txt'.format(args.d)))
         classify_adv_based_metrics(x_adv=x_adv, x_test=x_test, args=args)

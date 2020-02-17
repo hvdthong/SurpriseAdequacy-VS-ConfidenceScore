@@ -1,0 +1,36 @@
+# Data parameters
+data:
+    dataset: mnist
+    data_dir: data/mnist-data
+    input_size: [28,28]
+    input_channels: 1
+    num_classes: 10
+    valid_size: 0.1
+
+# Training parameters
+training:
+    output_folder: trained_model/mnist/selfconfid
+    task: classification
+    learner: selfconfid
+    nb_epochs: 300
+    batch_size: 128
+    loss:
+        name: selfconfid_mse
+        weighting: 1
+    optimizer:
+        name: adam
+        lr: 0.000001
+    lr_schedule:
+    ft_on_val: False
+    metrics: ['accuracy', 'auc', 'ap_success', 'accuracy_success', 'ap_errors', 'accuracy_errors']
+    pin_memory: False
+    num_workers: 1
+    augmentations:
+        normalize: [[0.1307,], [0.3081,]]
+
+# Model parameters
+model:
+    name: small_convnet_mnist_selfconfid_cloning
+    resume: 
+    uncertainty: 
+

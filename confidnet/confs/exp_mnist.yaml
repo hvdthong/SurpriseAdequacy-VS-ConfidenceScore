@@ -9,7 +9,7 @@ data:
 
 # Training parameters
 training:
-    output_folder: trained_model/mnist/
+    output_folder: trained_model/mnist/default
     task: classification
     learner: default
     nb_epochs: 75

@@ -1,5 +1,5 @@
 import argparse
-from utils import load_file, convert_list_number_to_float, convert_predict_and_true_to_binary
+from utils import load_file, convert_list_number_to_float, convert_predict_and_true_to_binary, convert_list_string_to_True_False
 from sklearn.metrics import roc_curve, auc
 import matplotlib.pyplot as plt
 
@@ -18,13 +18,24 @@ if __name__ == '__main__':
         lsa = convert_list_number_to_float(load_file('./metrics/%s_lsa_activation_3.txt' % (args.d)))
         dsa = convert_list_number_to_float(load_file('./metrics/%s_dsa_activation_3.txt' % (args.d)))
         ts = convert_list_number_to_float(load_file('./metrics/%s_ts_activation_3.txt' % (args.d)))
+        
+        confidnet_accurate = convert_list_string_to_True_False(load_file('./metrics/%s_confidnet_accurate_epoch_115.txt' % (args.d)))
+        confidnet_score = convert_list_number_to_float(load_file('./metrics/%s_confidnet_score_epoch_115.txt' % (args.d)))
     
     if args.d == 'cifar':
         lsa = convert_list_number_to_float(load_file('./metrics/%s_lsa_activation_11.txt' % (args.d)))
         dsa = convert_list_number_to_float(load_file('./metrics/%s_dsa_activation_11.txt' % (args.d)))
         ts = convert_list_number_to_float(load_file('./metrics/%s_ts_activation_11.txt' % (args.d)))
+
+        confidnet_accurate = convert_list_string_to_True_False(load_file('./metrics/%s10_confidnet_accurate_epoch_315.txt' % (args.d)))
+        confidnet_score = convert_list_number_to_float(load_file('./metrics/%s10_confidnet_score_epoch_315.txt' % (args.d)))
     
     binary_predicted_true = convert_predict_and_true_to_binary(predicted=predicted, true=true)
+
+    ################################################################################################################
+    fpr_confidnet, tpr_confidnet, _ = roc_curve(confidnet_accurate, confidnet_score)
+    roc_auc_confidnet = auc(fpr_confidnet, tpr_confidnet)
+    ################################################################################################################
 
     ################################################################################################################
     fpr_conf, tpr_conf, _ = roc_curve(binary_predicted_true, confidence)
@@ -56,6 +67,7 @@ if __name__ == '__main__':
         plt.plot(fpr_lsa, tpr_lsa, 'c', label = 'AUC_lsa = %0.2f' % roc_auc_lsa)
         plt.plot(fpr_conf, tpr_conf, 'g', label = 'AUC_dsa = %0.2f' % roc_auc_conf) 
         plt.plot(fpr_ts, tpr_ts, 'm', label = 'AUC_ts = %0.2f' % roc_auc_ts) 
+        plt.plot(fpr_confidnet, tpr_confidnet, 'k', label = 'AUC_confidnet = %0.2f' % roc_auc_confidnet) 
         plt.legend(loc = 'lower right')
         plt.plot([0, 1], [0, 1],'r--')
         plt.xlim([0, 1])
@@ -70,6 +82,7 @@ if __name__ == '__main__':
         plt.plot(fpr_lsa, tpr_lsa, 'c', label = 'AUC_lsa = %0.2f' % roc_auc_lsa)
         plt.plot(fpr_dsa, tpr_dsa, 'g', label = 'AUC_dsa = %0.2f' % roc_auc_dsa)
         plt.plot(fpr_ts, tpr_ts, 'm', label = 'AUC_ts = %0.2f' % roc_auc_ts) 
+        plt.plot(fpr_confidnet, tpr_confidnet, 'k', label = 'AUC_confidnet = %0.2f' % roc_auc_confidnet) 
         plt.legend(loc = 'lower right')
         plt.plot([0, 1], [0, 1],'r--')
         plt.xlim([0, 1])

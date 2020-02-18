@@ -43,13 +43,14 @@ def draw_surprise_inputs(binary_predicted_true, score, args):
     if args.ts:
         metric = 'ts'
     
-    # draw a line of ascending and descending 
-    per_ascending = accuracy_surprise_inputs(df=df.sort_values(by=['score'], ascending=True), x_axis_tickles=x_axis_tickles)
-    per_descending = accuracy_surprise_inputs(df=df.sort_values(by=['score'], ascending=False), x_axis_tickles=x_axis_tickles)
-    plt.plot(x_axis_tickles, per_ascending, 'ro-', label='Ascending %s' % metric)
-    plt.plot(x_axis_tickles, per_descending, 'bs-', label='Descending %s' % metric)
-    plt.legend()
-    plt.savefig('./results/{}_{}_surprise_input.jpg'.format(args.d, metric))
+    if args.lsa or args.dsa or args.conf or args.ts:
+        # draw a line of ascending and descending 
+        per_ascending = accuracy_surprise_inputs(df=df.sort_values(by=['score'], ascending=True), x_axis_tickles=x_axis_tickles)
+        per_descending = accuracy_surprise_inputs(df=df.sort_values(by=['score'], ascending=False), x_axis_tickles=x_axis_tickles)
+        plt.plot(x_axis_tickles, per_ascending, 'ro-', label='Ascending %s' % metric)
+        plt.plot(x_axis_tickles, per_descending, 'bs-', label='Descending %s' % metric)
+        plt.legend()
+        plt.savefig('./results/{}_{}_surprise_input.jpg'.format(args.d, metric))
 
 
 if __name__ == '__main__':

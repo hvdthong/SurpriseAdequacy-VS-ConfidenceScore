@@ -104,3 +104,6 @@ ________________________________________________________________
 
 =================================================================
 # folder "metrics": contain all metrics (i.e., surprise adequacy, confidence score, etc.)
+confidnet (MNIST): epoch_115
+confidnet (CIFAR): epoch_315
+=================================================================

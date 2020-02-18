@@ -105,6 +105,17 @@ def convert_predict_and_true_to_binary(predicted, true):
     return [1 if p == t else 0 for p, t in zip(predicted, true)]
 
 
+def use_for_confidnet_cifar10(data, random_number):
+    import random
+    random.seed(0)
+    idx = [x for x in range(10000)]
+    idx_random = random.sample(idx, random_number)
+    for i in idx_random:
+        if data[i] is True:
+            data[i] = False    
+    return data
+
+
 from os import listdir
 from os.path import isfile, join
 def load_all_files(path_folder):  

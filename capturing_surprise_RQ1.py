@@ -1,5 +1,5 @@
 import argparse
-from utils import convert_predict_and_true_to_binary, load_file, convert_list_number_to_float
+from utils import convert_predict_and_true_to_binary, load_file, convert_list_number_to_float, convert_list_string_to_True_False, use_for_confidnet_cifar10
 import pandas as pd 
 import matplotlib.pyplot as plt
 
@@ -42,15 +42,24 @@ def draw_surprise_inputs(binary_predicted_true, score, args):
         metric = 'conf'
     if args.ts:
         metric = 'ts'
+    if args.confidnet:
+        metric = 'confidnet'
     
+    # draw a line of ascending and descending 
+    per_ascending = accuracy_surprise_inputs(df=df.sort_values(by=['score'], ascending=True), x_axis_tickles=x_axis_tickles)
+    per_descending = accuracy_surprise_inputs(df=df.sort_values(by=['score'], ascending=False), x_axis_tickles=x_axis_tickles)
+    plt.plot(x_axis_tickles, per_ascending, 'ro-', label='Ascending %s' % metric)
+    plt.plot(x_axis_tickles, per_descending, 'bs-', label='Descending %s' % metric)
+    plt.legend()
+
     if args.lsa or args.dsa or args.conf or args.ts:
-        # draw a line of ascending and descending 
-        per_ascending = accuracy_surprise_inputs(df=df.sort_values(by=['score'], ascending=True), x_axis_tickles=x_axis_tickles)
-        per_descending = accuracy_surprise_inputs(df=df.sort_values(by=['score'], ascending=False), x_axis_tickles=x_axis_tickles)
-        plt.plot(x_axis_tickles, per_ascending, 'ro-', label='Ascending %s' % metric)
-        plt.plot(x_axis_tickles, per_descending, 'bs-', label='Descending %s' % metric)
-        plt.legend()
         plt.savefig('./results/{}_{}_surprise_input.jpg'.format(args.d, metric))
+
+    if args.d == 'mnist' and args.confidnet:    
+        plt.savefig('./results/{}_{}_epoch_11_surprise_input.jpg'.format(args.d, metric))
+
+    if args.d == 'cifar' and args.confidnet:    
+        plt.savefig('./results/{}_{}_epoch_162_surprise_input.jpg'.format(args.d, metric))
 
 
 if __name__ == '__main__':
@@ -68,9 +77,12 @@ if __name__ == '__main__':
     parser.add_argument(
         "--ts", "-ts", help="Trust Score", action="store_true"
     )
+    parser.add_argument(
+        "--confidnet", "-confidnet", help="Confidnet Score", action="store_true"
+    )
     args = parser.parse_args()
     assert args.d in ["mnist", "cifar"], "Dataset should be either 'mnist' or 'cifar'"    
-    assert args.lsa ^ args.dsa ^ args.conf ^ args.ts, "Select either 'lsa' or 'dsa' or etc."    
+    assert args.lsa ^ args.dsa ^ args.conf ^ args.ts ^ args.confidnet, "Select either 'lsa' or 'dsa' or etc."    
     print(args)
 
     predicted = load_file('./metrics/%s_pred_label.txt' % (args.d))
@@ -94,5 +106,16 @@ if __name__ == '__main__':
         score_ = convert_list_number_to_float(load_file('./metrics/%s_ts_activation_3.txt' % (args.d)))
     if args.d == 'cifar' and args.ts:
         score_ = convert_list_number_to_float(load_file('./metrics/%s_ts_activation_11.txt' % (args.d)))
-    
+
+    if args.d == 'mnist' and args.confidnet:
+        score_ = convert_list_number_to_float(load_file('./metrics/%s_confidnet_score_epoch_11.txt' % (args.d)))
+        accurate_ = load_file('./metrics/%s_confidnet_accurate_epoch_11.txt' % (args.d))
+        binary_predicted_true = [1 if a == 'True' else 0 for a in accurate_]
+
+    if args.d == 'cifar' and args.confidnet:
+        score_ = convert_list_number_to_float(load_file('./metrics/%s10_confidnet_score_epoch_162.txt' % (args.d)))
+        accurate_ = convert_list_string_to_True_False(load_file('./metrics/%s10_confidnet_accurate_epoch_162.txt' % (args.d)))
+        accurate_ = use_for_confidnet_cifar10(accurate_, 65)
+        binary_predicted_true = [1 if a is True else 0 for a in accurate_]
+
     draw_surprise_inputs(binary_predicted_true=binary_predicted_true, score=score_, args=args)

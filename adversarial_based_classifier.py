@@ -51,7 +51,7 @@ def classify_adv_based_metrics(x_adv, x_test, args):
     x = np.array(x_adv + x_test)
     x = np.reshape(x, (x.shape[0], 1))    
     skf = StratifiedKFold(n_splits=args.n_fold, random_state=None, shuffle=True)
-    for train_index, test_index in skf.split(x, y):        
+    for train_index, test_index in skf.split(x, y):
         x_train, x_test = x[train_index], x[test_index]
         y_train, y_test = y[train_index], y[test_index]
         roc_auc = round(roc_auc_classify(x=(x_train, x_test), y=(y_train, y_test), args=args), 4)
@@ -61,6 +61,8 @@ def classify_adv_based_metrics(x_adv, x_test, args):
             print('ROC-AUC of dataset {} with attack {} for confidence score: {}'.format(args.d, args.attack, roc_auc))
         if args.clf_ts:
             print('ROC-AUC of dataset {} with attack {} for trust score: {}'.format(args.d, args.attack, roc_auc))
+        if args.clf_confidnet:
+            print('ROC-AUC of dataset {} with attack {} for confidnet score: {}'.format(args.d, args.attack, roc_auc))
         break
 
 
@@ -81,6 +83,9 @@ if __name__ == '__main__':
     parser.add_argument(
         "--clf_ts", "-clf_ts", help="Classification based on Trust Score", action="store_true"
     )
+    parser.add_argument(
+        "--clf_confidnet", "-clf_confidnet", help="Classification based on Confidnet Score", action="store_true"
+    )
     """We have five different attacks:
         + Fast Gradient Sign Method (fgsm)
         + Basic Iterative Method (bim-a, bim-b, or bim)
@@ -93,7 +98,7 @@ if __name__ == '__main__':
     assert args.d in ["mnist", "cifar"], "Dataset should be either 'mnist' or 'cifar'"
     assert args.alg in ["lr"], "Algorithm Classification"
     assert args.attack in ["fgsm", "bim", 'jsma', 'c+w'], "Dataset should be either 'fgsm', 'bim', 'jsma', 'c+w'"
-    assert args.clf_dsa ^ args.clf_lsa ^ args.clf_conf ^ args.clf_ts, "Select classification based on metrics (i.e., dsa, lsa, conf, etc.)"
+    assert args.clf_dsa ^ args.clf_lsa ^ args.clf_conf ^ args.clf_ts ^ args.clf_confidnet, "Select classification based on metrics (i.e., dsa, lsa, conf, etc.)"
     print(args)
 
     if args.clf_dsa:        
@@ -118,4 +123,13 @@ if __name__ == '__main__':
         elif args.d == 'cifar':
             x_adv = convert_list_number_to_float(load_file('./metrics/{}_adv_ts_{}_activation_11.txt'.format(args.d, args.attack)))
             x_test = convert_list_number_to_float(load_file('./metrics/{}_ts_activation_11.txt'.format(args.d)))
+        classify_adv_based_metrics(x_adv=x_adv, x_test=x_test, args=args)
+
+    if args.clf_confidnet:
+        if args.d == 'mnist':
+            x_adv = convert_list_number_to_float(load_file('./metrics/{}_adv_confidnet_epoch_11_{}.txt'.format(args.d, args.attack)))
+            x_test = convert_list_number_to_float(load_file('./metrics/{}_confidnet_score_epoch_11.txt'.format(args.d)))
+        elif args.d == 'cifar':
+            x_adv = convert_list_number_to_float(load_file('./metrics/{}10_adv_confidnet_epoch_162_{}.txt'.format(args.d, args.attack)))
+            x_test = convert_list_number_to_float(load_file('./metrics/{}10_confidnet_score_epoch_162.txt'.format(args.d)))
         classify_adv_based_metrics(x_adv=x_adv, x_test=x_test, args=args)

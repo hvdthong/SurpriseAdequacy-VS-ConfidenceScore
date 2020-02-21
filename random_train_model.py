@@ -138,7 +138,7 @@ def train(args, ntime, data):
     if args.d == 'mnist':
         epochs = 100
     if args.d == 'cifar':
-        epochs = 250
+        epochs = 350
 
     model.fit(
         x_train,
@@ -162,7 +162,7 @@ if __name__ == "__main__":
     print(args)
     
     save_path = '../2020_FSE_Empirical/%s' % args.d
-    for t in range(args.r):
+    for t in range(args.s, args.e):
         data_train, data_test = load_random_sample_data(save_path=save_path, ntime=t)        
         x_train, y_train = data_train
         x_test, y_test = data_test

@@ -32,14 +32,23 @@ def data_process(data):
     data = (train, test)
     return data
 
-def test(args, ntime, data_test):
+def test(args, ntime, data):
+    training, testing = data
+    x_train, y_train = training
+    x_test, y_test = testing
     if args.d == 'mnist':
         path_model = './random_sample_model/%s/%i/model_-75-.h5' % (args.d, ntime)
-        print(path_model)
-        exit()
         model = load_model(path_model)
         model.summary()
 
+    if args.conf:
+        score = model.predict(x_test)        
+        score = list(np.amax(score, axis=1))
+    if args.lsa:
+        score = fetch_lsa(model, x_train, x_test, "test", [args.layer], args)
+    if args.dsa:
+        score = fetch_dsa(model, x_train, x_test, "test", [args.layer], args)
+    return score 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -117,7 +126,12 @@ if __name__ == "__main__":
     for t in range(args.s, args.e):
         data = load_random_sample_data(save_path=save_path, ntime=t)
         data = data_process(data)
-        _, testing = data
-        x_test, y_test = testing 
-        test(args=args, ntime=t, data_test=(x_test, y_test))
+        score = test(args=args, ntime=t, data=data)
+
+        if args.conf:
+            write_file(path_file='./random_sample_results/{}_{}_conf.txt'.format(args.d, t), data=score)
+        if args.lsa:
+            write_file(path_file='./random_sample_results/{}_{}_lsa_{}.txt'.format(args.d, t, args.layer), data=score)
+        if args.dsa:
+            write_file(path_file='./random_sample_results/{}_{}_dsa_{}.txt'.format(args.d, t, args.layer), data=score)
         exit()

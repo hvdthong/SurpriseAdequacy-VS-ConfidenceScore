@@ -7,7 +7,8 @@ from keras.datasets import mnist, cifar10
 from keras.models import load_model, Model
 from sa import fetch_dsa, fetch_lsa, get_sc
 from utils import *
-from keras import utils
+from keras.utils import np_utils
+from generate_sample_data import load_random_sample_data
 
 CLIP_MIN = -0.5
 CLIP_MAX = 0.5
@@ -30,6 +31,14 @@ def data_process(data):
     test = (x_test, y_test)
     data = (train, test)
     return data
+
+def test(args, ntime, data_test):
+    if args.d == 'mnist':
+        path_model = './random_sample_model/%s/%i/model_-75-.h5' % (args.d, ntime)
+        print(path_model)
+        exit()
+        model = load_model(path_model)
+        model.summary()
 
 
 if __name__ == "__main__":
@@ -105,3 +114,10 @@ if __name__ == "__main__":
 
     save_path = '../2020_FSE_Empirical/%s' % args.d
     print(save_path)
+    for t in range(args.s, args.e):
+        data = load_random_sample_data(save_path=save_path, ntime=t)
+        data = data_process(data)
+        _, testing = data
+        x_test, y_test = testing 
+        test(args=args, ntime=t, data_test=(x_test, y_test))
+        exit()

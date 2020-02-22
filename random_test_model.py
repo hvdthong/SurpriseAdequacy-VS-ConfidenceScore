@@ -36,6 +36,11 @@ def test(args, ntime, data):
     training, testing = data
     x_train, y_train = training
     x_test, y_test = testing
+    
+    if args.true_label:
+        score = np.argmax(y_test, axis=1)
+        return score
+    
     if args.d == 'mnist':
         path_model = './random_sample_model/%s/%i/model_-75-.h5' % (args.d, ntime)
         model = load_model(path_model)
@@ -53,7 +58,10 @@ def test(args, ntime, data):
     if args.lsa:
         score = fetch_lsa(model, x_train, x_test, "test", [args.layer], args)
     if args.dsa:
-        score = fetch_dsa(model, x_train, x_test, "test", [args.layer], args)
+        score = fetch_dsa(model, x_train, x_test, "test", [args.layer], args)    
+    if args.pred_label:
+        score = model.predict(x_test)
+        score = np.argmax(score, axis=1)        
     return score 
 
 if __name__ == "__main__":
@@ -132,7 +140,7 @@ if __name__ == "__main__":
     for t in range(args.s, args.e):
         data = load_random_sample_data(save_path=save_path, ntime=t)
         data = data_process(data)
-        score = test(args=args, ntime=t, data=data)
+        score = test(args=args, ntime=t, data=data)        
 
         if args.conf:
             write_file(path_file='./random_sample_results/{}/{}_{}_conf.txt'.format(args.d, args.d, t), data=score)
@@ -140,3 +148,7 @@ if __name__ == "__main__":
             write_file(path_file='./random_sample_results/{}/{}_{}_lsa.txt'.format(args.d, args.d, t), data=score)
         if args.dsa:
             write_file(path_file='./random_sample_results/{}/{}_{}_dsa.txt'.format(args.d, args.d, t), data=score)
+        if args.true_label:
+            write_file(path_file='./random_sample_results/{}/{}_{}_true_label.txt'.format(args.d, args.d, t), data=score)
+        if args.pred_label:
+            write_file(path_file='./random_sample_results/{}/{}_{}_pred_label.txt'.format(args.d, args.d, t), data=score)

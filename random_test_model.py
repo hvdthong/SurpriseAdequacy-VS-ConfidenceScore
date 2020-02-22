@@ -41,6 +41,12 @@ def test(args, ntime, data):
         model = load_model(path_model)
         model.summary()
 
+    if args.d == 'mnist':
+        layer_num = 3 + 4 * (int(model.name.split('_')[-1]) - 1)  
+    
+    args.layer = 'activation_' + str(layer_num)
+    print(args.layer)
+
     if args.conf:
         score = model.predict(x_test)        
         score = list(np.amax(score, axis=1))
@@ -129,9 +135,8 @@ if __name__ == "__main__":
         score = test(args=args, ntime=t, data=data)
 
         if args.conf:
-            write_file(path_file='./random_sample_results/{}_{}_conf.txt'.format(args.d, t), data=score)
+            write_file(path_file='./random_sample_results/{}/{}_{}_conf.txt'.format(args.d, args.d, t), data=score)
         if args.lsa:
-            write_file(path_file='./random_sample_results/{}_{}_lsa_{}.txt'.format(args.d, t, args.layer), data=score)
+            write_file(path_file='./random_sample_results/{}/{}_{}_lsa.txt'.format(args.d, args.d, t), data=score)
         if args.dsa:
-            write_file(path_file='./random_sample_results/{}_{}_dsa_{}.txt'.format(args.d, t, args.layer), data=score)
-        exit()
+            write_file(path_file='./random_sample_results/{}/{}_{}_dsa.txt'.format(args.d, args.d, t), data=score)

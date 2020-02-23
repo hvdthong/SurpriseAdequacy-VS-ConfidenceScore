@@ -45,9 +45,16 @@ def test(args, ntime, data):
         path_model = './random_sample_model/%s/%i/model_-75-.h5' % (args.d, ntime)
         model = load_model(path_model)
         model.summary()
+    
+    if args.d == 'cifar':
+        path_model = './random_sample_model/%s/%i/model_-325-.h5' % (args.d, ntime)
+        model = load_model(path_model)
+        model.summary()
 
     if args.d == 'mnist':
         layer_num = 3 + 4 * (int(model.name.split('_')[-1]) - 1)  
+    if args.d == 'cifar':
+        layer_num = 11 + 12 * (int(model.name.split('_')[-1]) - 1)  
     
     args.layer = 'activation_' + str(layer_num)
     print(args.layer)

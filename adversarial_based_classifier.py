@@ -50,10 +50,11 @@ def classify_adv_based_metrics(x_adv, x_test, args):
     y = generate_labeled_data(x_adv=x_adv, x_test=x_test)
     x = np.array(x_adv + x_test)
     x = np.reshape(x, (x.shape[0], 1))    
-    skf = StratifiedKFold(n_splits=args.n_fold, random_state=None, shuffle=True)
+    skf = StratifiedKFold(n_splits=args.n_fold, random_state=0, shuffle=True)
     for train_index, test_index in skf.split(x, y):
-        x_train, x_test = x[train_index], x[test_index]
-        y_train, y_test = y[train_index], y[test_index]
+        x_test, x_train = x[train_index], x[test_index]  # using 90% percent of data for testing, only 10% for training
+        y_test, y_train = y[train_index], y[test_index]
+        
         roc_auc = round(roc_auc_classify(x=(x_train, x_test), y=(y_train, y_test), args=args), 4)
         if args.clf_dsa:
             print('ROC-AUC of dataset {} with attack {} for distance-based surprise adequacy (dsa): {}'.format(args.d, args.attack, roc_auc))
@@ -70,7 +71,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("--d", "-d", help="Dataset", type=str, default="mnist")
     parser.add_argument('--alg', '-alg', help="Algorithm Classification", type=str, default="lr")
-    parser.add_argument('--n_fold', '-n_fold', help="Number of folds", type=int, default=5)
+    parser.add_argument('--n_fold', '-n_fold', help="Number of folds", type=int, default=10)
     parser.add_argument(
         "--clf_dsa", "-clf_dsa", help="Classification based on Distance-based Surprise Adequacy", action="store_true"
     )

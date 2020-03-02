@@ -12,6 +12,7 @@ from keras.regularizers import l2
 from keras.callbacks import ModelCheckpoint
 from keras import regularizers
 from keras.optimizers import SGD
+from torchvision import datasets
 
 CLIP_MIN = -0.5
 CLIP_MAX = 0.5
@@ -104,6 +105,13 @@ def train(args):
             Dropout(0.5),
             Dense(10),
         ]
+    
+    elif args.d == 'imagenet':
+        path = './data/imagenet/'
+        train_dataset = datasets.ImageNet(root=path, train=True, download=True)
+        test_dataset = datasets.ImageNet(root=path, train=False, download=True)
+        print(train_dataset.shape, test_dataset.shape)
+        exit()
 
     x_train = x_train.astype("float32")
     x_test = x_test.astype("float32")
@@ -154,6 +162,6 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("-d", required=True, type=str)
     args = parser.parse_args()
-    assert args.d in ["mnist", "cifar"], "Dataset should be either 'mnist' or 'cifar'"
+    assert args.d in ["mnist", "cifar", 'imagenet'], "Dataset should be either 'mnist' or 'cifar' or 'imagenet'"
 
     train(args)

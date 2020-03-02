@@ -8,9 +8,25 @@ from keras.models import load_model, Model
 from sa import fetch_dsa, fetch_lsa, get_sc
 from utils import *
 from keras import utils
+from keras.applications.vgg16 import VGG16
 
 CLIP_MIN = -0.5
 CLIP_MAX = 0.5
+
+def load_header_imagenet(data):
+    """Getting the header imagnet data
+    
+    Args:
+        data (list): List of imagenet information        
+    Returns:        
+        img_name: name of the image 
+        label: label of the image 
+    """
+    img_name, label = list(), list()
+    for d in data:
+        img_name.append(d.strip().split()[0].strip())
+        label.append(int(d.strip().split()[1].strip()))
+    return img_name, label
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -97,7 +113,7 @@ if __name__ == "__main__":
         type=str,
     )
     args = parser.parse_args()
-    assert args.d in ["mnist", "cifar"], "Dataset should be either 'mnist' or 'cifar'"
+    assert args.d in ["mnist", "cifar", 'imagenet'], "Dataset should be either 'mnist' or 'cifar'"
     assert args.attack in ["fgsm", "bim", 'jsma', 'c+w'], "Dataset should be either 'fgsm', 'bim', 'jsma', 'c+w'"
     assert args.lsa ^ args.dsa ^ args.conf ^ args.true_label ^ args.pred_label ^ args.adv_lsa ^ args.adv_dsa ^ args.adv_conf, "Select either 'lsa' or 'dsa' or etc."
     print(args)
@@ -116,6 +132,18 @@ if __name__ == "__main__":
 
         model = load_model("./model/cifar_model_improvement-491-0.88.h5")
         model.summary()
+
+    elif args.d == 'imagenet':
+        path_img_test = '../datasets/ilsvrc2012/images/test/'
+        path_file_header = '../datasets/ilsvrc2012/images/val.txt'
+        img_name, img_label = load_header_imagenet(load_file(path_file_header))
+        print(len(img_name), len(img_label))
+        print(img_name[0], img_label[0])
+        img_path = 'elephant.jpg'
+        exit()
+        model = VGG16(weights='imagenet')
+        model.summary()
+        exit()
 
     x_train = x_train.astype("float32")
     x_train = (x_train / 255.0) - (1.0 - CLIP_MAX)

@@ -44,6 +44,9 @@ def load_img_imagenet(img_path):
     x = preprocess_input(x)
     return x
 
+def load_img_random_train(path_img, path_info):
+    
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -188,6 +191,9 @@ if __name__ == "__main__":
         x_train = (x_train / 255.0) - (1.0 - CLIP_MAX)
         x_test = x_test.astype("float32")
         x_test = (x_test / 255.0) - (1.0 - CLIP_MAX)
+
+    if args.d == 'imagenet':
+
 
     if args.lsa:            
         test_lsa = fetch_lsa(model, x_train, x_test, "test", [args.layer], args)

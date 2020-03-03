@@ -104,14 +104,7 @@ def train(args):
 
             Dropout(0.5),
             Dense(10),
-        ]
-    
-    elif args.d == 'imagenet':
-        path = './data/imagenet/'
-        train_dataset = datasets.ImageNet(root=path, train=True, download=True)
-        test_dataset = datasets.ImageNet(root=path, train=False, download=True)
-        print(train_dataset.shape, test_dataset.shape)
-        exit()
+        ]    
 
     x_train = x_train.astype("float32")
     x_test = x_test.astype("float32")

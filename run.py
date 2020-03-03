@@ -9,24 +9,41 @@ from sa import fetch_dsa, fetch_lsa, get_sc
 from utils import *
 from keras import utils
 from keras.applications.vgg16 import VGG16
+from keras.preprocessing import image
+from keras.applications.vgg16 import preprocess_input
 
 CLIP_MIN = -0.5
 CLIP_MAX = 0.5
 
 def load_header_imagenet(data):
-    """Getting the header imagnet data
+    """Getting the header ImageNet data
     
     Args:
         data (list): List of imagenet information        
     Returns:        
-        img_name: name of the image 
-        label: label of the image 
+        img_name (list of string): name of the image 
+        label (list of int): label of the image 
     """
     img_name, label = list(), list()
     for d in data:
         img_name.append(d.strip().split()[0].strip())
         label.append(int(d.strip().split()[1].strip()))
     return img_name, label
+
+def load_img_imagenet(img_path):
+    """Process the image of ImageNet data
+    
+    Args:
+        img_path (string): Path of image
+    Returns:        
+        x (array): array of the image        
+    """
+    img = image.load_img(img_path, target_size=(224, 224))
+    x = image.img_to_array(img)
+    x = np.expand_dims(x, axis=0)
+    x = preprocess_input(x)
+    return x
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -134,9 +151,30 @@ if __name__ == "__main__":
         model.summary()
 
     elif args.d == 'imagenet':
-        path_img_test = '../datasets/ilsvrc2012/images/test/'
+        model = VGG16(weights='imagenet')
+        model.summary()
+        # exit()
+        path_img_val = '../datasets/ilsvrc2012/images/val/'
         path_file_header = '../datasets/ilsvrc2012/images/val.txt'
         img_name, img_label = load_header_imagenet(load_file(path_file_header))
+        print(len(img_name), len(img_label))
+        print(img_name[0], img_label[0])
+
+        path_img_val = '../datasets/ilsvrc2012/images/train/'
+        path_file_header = '../datasets/ilsvrc2012/images/train.txt'
+        img_name, img_label = load_header_imagenet(load_file(path_file_header))
+        print(len(img_name), len(img_label))
+        print(img_name[0], img_label[0])
+        exit()
+        for n, l in zip(img_name, img_label):
+            img = load_img_imagenet(path_img_val + n)
+            pred_img = model.predict(img)
+
+            print(img.shape, l)
+            print(pred_img.shape)
+            print(np.amax(pred_img, axis=1))
+            print(np.argmax(pred_img, axis=1))
+            exit()
         print(len(img_name), len(img_label))
         print(img_name[0], img_label[0])
         img_path = 'elephant.jpg'
@@ -145,10 +183,11 @@ if __name__ == "__main__":
         model.summary()
         exit()
 
-    x_train = x_train.astype("float32")
-    x_train = (x_train / 255.0) - (1.0 - CLIP_MAX)
-    x_test = x_test.astype("float32")
-    x_test = (x_test / 255.0) - (1.0 - CLIP_MAX)
+    if args.d == 'mnist' or args.d == 'cifar':
+        x_train = x_train.astype("float32")
+        x_train = (x_train / 255.0) - (1.0 - CLIP_MAX)
+        x_test = x_test.astype("float32")
+        x_test = (x_test / 255.0) - (1.0 - CLIP_MAX)
 
     if args.lsa:            
         test_lsa = fetch_lsa(model, x_train, x_test, "test", [args.layer], args)

@@ -11,6 +11,10 @@ from keras import utils
 from keras.applications.vgg16 import VGG16
 from keras.preprocessing import image
 from keras.applications.vgg16 import preprocess_input
+import random
+import pickle
+
+random.seed(0)
 
 CLIP_MIN = -0.5
 CLIP_MAX = 0.5
@@ -44,9 +48,74 @@ def load_img_imagenet(img_path):
     x = preprocess_input(x)
     return x
 
-def load_img_random_train(path_img, path_info):
+def numpy_append_advance(data):
+    """Append all the elements of a list in a numpy array
     
+    Args:
+        data (list): List of array
+    Returns:        
+        new_data (array): Numpy array
+    """
+    new_data = None
+    for i, d in enumerate(data):
+        if i == 0:
+            new_data = d
+        else:
+            new_data = np.append(new_data, d, axis=0)
+    return new_data
 
+def get_label_imagenet(name_folder, imagnet_info):    
+    for i in imagnet_info:
+        i_folder = i.split('/')[0]
+        if name_folder == i_folder:
+            return int(i.split()[1])
+
+def load_img_random_train(path_img, path_info, args):
+    """Load IMAGENET dataset random training for calculating DSA or LSA
+    
+    Args:
+        path_img (string): Folder of train dataset
+        path_info (string): A file which includes the information of training data
+        args: Keyboards arguments
+    Returns:        
+        x_train (array), y_train (array): Numpy array for input and label
+    """
+    imgnet_info = load_file(path_info)
+    name_folders = [p.split('/')[0].strip() for p in imgnet_info]
+    name_folders = list(sorted(set(name_folders)))        
+    if args.random_train == True:        
+        for i, n in enumerate(name_folders):
+            random_name_file = sorted(random.sample(os.listdir(path_img + n), args.random_train_size))
+            process_folder = numpy_append_advance([load_img_imagenet(path_img + n + '/' + r) for r in random_name_file])
+            label_folder = get_label_imagenet(name_folder=n, imagnet_info=imgnet_info)
+            label_folder = np.array([label_folder for i in range(args.random_train_size)])           
+            print('Processing folder %i with have name: %s' % (i, n))
+            pickle.dump((process_folder, label_folder), open('./dataset/imagenet/%i_%s.p' % (i, n), 'wb'))
+        print('--------------------------------------------------')
+        print('We finish processing the IMAGENET dataset')     
+        print('--------------------------------------------------')
+        
+        path_file = './dataset/imagenet/'
+        x_random_train, y_random_train = list(), list()
+        for i, n in enumerate(name_folders):
+            x, y = pickle.load(open(path_file + str(i) + '_' + str(n) + '.p', 'rb'))
+            x_random_train.append(x)
+            y_random_train.append(y)            
+        x_random_train = numpy_append_advance(x_random_train)
+        y_random_train = numpy_append_advance(y_random_train)
+        return x_random_train, y_random_train
+
+    else:
+        path_file = './dataset/imagenet/'
+        x_random_train, y_random_train = list(), list()
+        for i, n in enumerate(name_folders):
+            x, y = pickle.load(open(path_file + str(i) + '_' + str(n) + '.p', 'rb'))
+            x_random_train.append(x)
+            y_random_train.append(y)            
+        x_random_train = numpy_append_advance(x_random_train)
+        y_random_train = numpy_append_advance(y_random_train)
+        return x_random_train, y_random_train
+        
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -59,7 +128,7 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--conf", "-conf", help="Confidence Score", action="store_true"
-    )
+    )    
     parser.add_argument(
         "--true_label", "-true_label", help="True Label", action="store_true"
     )
@@ -132,36 +201,31 @@ if __name__ == "__main__":
         help="Layer name",
         type=str,
     )
+    parser.add_argument(
+        "--random_train", "-random_train", help="random selected images for training (only for IMAGENET dataset)", action="store_true"
+    )
+    parser.add_argument("--random_train_size", "-random_train_size", help="Dataset", type=int, default=50)
     args = parser.parse_args()
     assert args.d in ["mnist", "cifar", 'imagenet'], "Dataset should be either 'mnist' or 'cifar'"
     assert args.attack in ["fgsm", "bim", 'jsma', 'c+w'], "Dataset should be either 'fgsm', 'bim', 'jsma', 'c+w'"
     assert args.lsa ^ args.dsa ^ args.conf ^ args.true_label ^ args.pred_label ^ args.adv_lsa ^ args.adv_dsa ^ args.adv_conf, "Select either 'lsa' or 'dsa' or etc."
     print(args)
 
-    if args.d == "mnist":
-        (x_train, y_train), (x_test, y_test) = mnist.load_data()
-        x_train = x_train.reshape(-1, 28, 28, 1)
-        x_test = x_test.reshape(-1, 28, 28, 1)
-
-        # Load pre-trained model.
-        model = load_model("./model/mnist_model_improvement-235-0.99.h5")
-        model.summary()
-
-    elif args.d == "cifar":
-        (x_train, y_train), (x_test, y_test) = cifar10.load_data()
-
-        model = load_model("./model/cifar_model_improvement-491-0.88.h5")
-        model.summary()
-
-    elif args.d == 'imagenet':
-        model = VGG16(weights='imagenet')
-        model.summary()
-        # exit()
+    if args.d == 'imagenet':
         path_img_val = '../datasets/ilsvrc2012/images/val/'
-        path_file_header = '../datasets/ilsvrc2012/images/val.txt'
-        img_name, img_label = load_header_imagenet(load_file(path_file_header))
+        path_val_info = '../datasets/ilsvrc2012/images/val.txt'
+        img_name, img_label = load_header_imagenet(load_file(path_val_info))
         print(len(img_name), len(img_label))
         print(img_name[0], img_label[0])
+        exit()
+
+        path_img_train = '../datasets/ilsvrc2012/images/train/'
+        path_train_info = '../datasets/ilsvrc2012/images/train.txt'
+        x_train, y_train = load_img_random_train(path_img=path_img_train, path_info=path_train_info, args=args)
+        print(x_train.shape, y_train.shape)
+        exit()
+
+        
 
         path_img_val = '../datasets/ilsvrc2012/images/train/'
         path_file_header = '../datasets/ilsvrc2012/images/train.txt'
@@ -186,13 +250,31 @@ if __name__ == "__main__":
         model.summary()
         exit()
 
+    if args.d == "mnist":
+        (x_train, y_train), (x_test, y_test) = mnist.load_data()
+        x_train = x_train.reshape(-1, 28, 28, 1)
+        x_test = x_test.reshape(-1, 28, 28, 1)
+
+        # Load pre-trained model.
+        model = load_model("./model/mnist_model_improvement-235-0.99.h5")
+        model.summary()
+
+    elif args.d == "cifar":
+        (x_train, y_train), (x_test, y_test) = cifar10.load_data()
+
+        model = load_model("./model/cifar_model_improvement-491-0.88.h5")
+        model.summary()
+
+    elif args.d == 'imagenet':
+        model = VGG16(weights='imagenet')
+        model.summary()
+
+
     if args.d == 'mnist' or args.d == 'cifar':
         x_train = x_train.astype("float32")
         x_train = (x_train / 255.0) - (1.0 - CLIP_MAX)
         x_test = x_test.astype("float32")
         x_test = (x_test / 255.0) - (1.0 - CLIP_MAX)
-
-    if args.d == 'imagenet':
 
 
     if args.lsa:            

@@ -70,7 +70,7 @@ def get_label_imagenet(name_folder, imagnet_info):
         if name_folder == i_folder:
             return int(i.split()[1])
 
-def load_img_random_train(path_img, path_info, args):
+def load_imagenet_random_train(path_img, path_info, args):
     """Load IMAGENET dataset random training for calculating DSA or LSA
     
     Args:
@@ -83,6 +83,7 @@ def load_img_random_train(path_img, path_info, args):
     imgnet_info = load_file(path_info)
     name_folders = [p.split('/')[0].strip() for p in imgnet_info]
     name_folders = list(sorted(set(name_folders)))        
+    
     if args.random_train == True:        
         for i, n in enumerate(name_folders):
             random_name_file = sorted(random.sample(os.listdir(path_img + n), args.random_train_size))
@@ -101,21 +102,30 @@ def load_img_random_train(path_img, path_info, args):
             x, y = pickle.load(open(path_file + str(i) + '_' + str(n) + '.p', 'rb'))
             x_random_train.append(x)
             y_random_train.append(y)            
-        x_random_train = numpy_append_advance(x_random_train)
-        y_random_train = numpy_append_advance(y_random_train)
+        x_random_train = np.concatenate(x_random_train)
+        y_random_train = np.concatenate(y_random_train)
+        pickle.dump((x_random_train, y_random_train), open('./dataset/imagenet_train.p', 'wb'), protocol=4)
         return x_random_train, y_random_train
 
     else:
-        path_file = './dataset/imagenet/'
-        x_random_train, y_random_train = list(), list()
-        for i, n in enumerate(name_folders):
-            x, y = pickle.load(open(path_file + str(i) + '_' + str(n) + '.p', 'rb'))
-            x_random_train.append(x)
-            y_random_train.append(y)            
-        x_random_train = numpy_append_advance(x_random_train)
-        y_random_train = numpy_append_advance(y_random_train)
-        return x_random_train, y_random_train
+        path_file = './dataset/imagenet_train.p'
+        x, y = pickle.load(open(path_file, 'rb'))
+        return x, y
         
+def load_imagenet_val(path_img, path_info, args):
+    if args.val == True:
+        img_name, img_label = load_header_imagenet(load_file(path_val_info))
+        x, y = list(), list()
+        for n, l in zip(img_name, img_label):        
+            x.append(load_img_imagenet(path_img + n))
+            y.append(l)
+        x, y = np.concatenate(x), np.concatenate(y)
+        pickle.dump((x, y), open('./dataset/imagenet_val.p', 'wb'), protocol=4)
+        return x, y
+    else:
+        path_file = './dataset/imagenet_val.p'
+        x, y = pickle.load(open(path_file, 'rb'))
+        return x, y    
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -205,6 +215,9 @@ if __name__ == "__main__":
         "--random_train", "-random_train", help="random selected images for training (only for IMAGENET dataset)", action="store_true"
     )
     parser.add_argument("--random_train_size", "-random_train_size", help="Dataset", type=int, default=50)
+    parser.add_argument(
+        "--val", "-val", help="load validation dataset (only for IMAGENET dataset)", action="store_true"
+    )
     args = parser.parse_args()
     assert args.d in ["mnist", "cifar", 'imagenet'], "Dataset should be either 'mnist' or 'cifar'"
     assert args.attack in ["fgsm", "bim", 'jsma', 'c+w'], "Dataset should be either 'fgsm', 'bim', 'jsma', 'c+w'"
@@ -213,15 +226,13 @@ if __name__ == "__main__":
 
     if args.d == 'imagenet':
         path_img_val = '../datasets/ilsvrc2012/images/val/'
-        path_val_info = '../datasets/ilsvrc2012/images/val.txt'
-        img_name, img_label = load_header_imagenet(load_file(path_val_info))
-        print(len(img_name), len(img_label))
-        print(img_name[0], img_label[0])
+        path_val_info = '../datasets/ilsvrc2012/images/val.txt'        
+        x_test, y_test = load_imagenet_val(path_img=path_img_val, path_info=path_val_info, args=args)
         exit()
 
         path_img_train = '../datasets/ilsvrc2012/images/train/'
         path_train_info = '../datasets/ilsvrc2012/images/train.txt'
-        x_train, y_train = load_img_random_train(path_img=path_img_train, path_info=path_train_info, args=args)
+        x_train, y_train = load_imagenet_random_train(path_img=path_img_train, path_info=path_train_info, args=args)
         print(x_train.shape, y_train.shape)
         exit()
 

@@ -118,9 +118,9 @@ def load_imagenet_val(path_img, path_info, args):
         x, y = list(), list()
         for n, l in zip(img_name, img_label):        
             x.append(load_img_imagenet(path_img + n))
-            y.append(l)
-        x, y = np.concatenate(x), np.concatenate(y)
-        pickle.dump((x, y), open('./dataset/imagenet_val.p', 'wb'), protocol=4)
+            y.append(np.array([l]))
+        x, y = np.concatenate(x), np.concatenate(y)                
+        pickle.dump((x, y), open('./dataset/imagenet_val.p', 'wb'), protocol=4)        
         return x, y
     else:
         path_file = './dataset/imagenet_val.p'
@@ -225,41 +225,15 @@ if __name__ == "__main__":
     print(args)
 
     if args.d == 'imagenet':
-        path_img_val = '../datasets/ilsvrc2012/images/val/'
-        path_val_info = '../datasets/ilsvrc2012/images/val.txt'        
-        x_test, y_test = load_imagenet_val(path_img=path_img_val, path_info=path_val_info, args=args)
-        exit()
-
+        print('Loading IMAGENET dataset -----------------------------')
         path_img_train = '../datasets/ilsvrc2012/images/train/'
         path_train_info = '../datasets/ilsvrc2012/images/train.txt'
         x_train, y_train = load_imagenet_random_train(path_img=path_img_train, path_info=path_train_info, args=args)
-        print(x_train.shape, y_train.shape)
-        exit()
 
-        
-
-        path_img_val = '../datasets/ilsvrc2012/images/train/'
-        path_file_header = '../datasets/ilsvrc2012/images/train.txt'
-        img_name, img_label = load_header_imagenet(load_file(path_file_header))
-        print(len(img_name), len(img_label))
-        print(img_name[0], img_label[0])
-        exit()
-        for n, l in zip(img_name, img_label):
-            img = load_img_imagenet(path_img_val + n)
-            pred_img = model.predict(img)
-
-            print(img.shape, l)
-            print(pred_img.shape)
-            print(np.amax(pred_img, axis=1))
-            print(np.argmax(pred_img, axis=1))
-            exit()
-        print(len(img_name), len(img_label))
-        print(img_name[0], img_label[0])
-        img_path = 'elephant.jpg'
-        exit()
-        model = VGG16(weights='imagenet')
-        model.summary()
-        exit()
+        path_img_val = '../datasets/ilsvrc2012/images/val/'
+        path_val_info = '../datasets/ilsvrc2012/images/val.txt'        
+        x_test, y_test = load_imagenet_val(path_img=path_img_val, path_info=path_val_info, args=args)                
+        print('Finish: Loading IMAGENET dataset -----------------------------')
 
     if args.d == "mnist":
         (x_train, y_train), (x_test, y_test) = mnist.load_data()
@@ -297,7 +271,7 @@ if __name__ == "__main__":
         write_file(path_file='./metrics/{}_dsa_{}.txt'.format(args.d, args.layer), data=test_dsa)
 
     if args.conf:
-        y_pred = model.predict(x_test)        
+        y_pred = model.predict(x_test)
         test_conf = list(np.amax(y_pred, axis=1))
         write_file(path_file='./metrics/{}_conf.txt'.format(args.d), data=test_conf)
 

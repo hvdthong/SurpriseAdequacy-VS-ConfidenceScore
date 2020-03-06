@@ -8,11 +8,12 @@ from keras.models import load_model, Model
 from sa import fetch_dsa, fetch_lsa, get_sc
 from utils import *
 from keras import utils
+import random
+import pickle
+
 from keras.applications.vgg16 import VGG16
 from keras.preprocessing import image
 from keras.applications.vgg16 import preprocess_input
-import random
-import pickle
 
 random.seed(0)
 
@@ -244,13 +245,11 @@ if __name__ == "__main__":
         # Load pre-trained model.
         model = load_model("./model/mnist_model_improvement-235-0.99.h5")
         model.summary()
-
     elif args.d == "cifar":
         (x_train, y_train), (x_test, y_test) = cifar10.load_data()
 
         model = load_model("./model/cifar_model_improvement-491-0.88.h5")
         model.summary()
-
     elif args.d == 'imagenet':
         model = VGG16(weights='imagenet')
         model.summary()

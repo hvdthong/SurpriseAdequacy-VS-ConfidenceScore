@@ -8,7 +8,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("--d", "-d", help="Dataset", type=str, default="mnist")
     args = parser.parse_args()
-    assert args.d in ["mnist", "cifar"], "Dataset should be either 'mnist' or 'cifar'"
+    assert args.d in ["mnist", "cifar", 'imagenet'], "Dataset should be either 'mnist' or 'cifar'"
     print(args)
 
     predicted = load_file('./metrics/%s_pred_label.txt' % (args.d))
@@ -32,11 +32,17 @@ if __name__ == '__main__':
         confidnet_accurate = use_for_confidnet_cifar10(confidnet_accurate, 65)
         confidnet_score = convert_list_number_to_float(load_file('./metrics/%s10_confidnet_score_epoch_162.txt' % (args.d)))
     
-    binary_predicted_true = convert_predict_and_true_to_binary(predicted=predicted, true=true)
+    if args.d == 'imagenet':
+        lsa = convert_list_number_to_float(load_file('./metrics/%s_lsa_fc1.txt' % (args.d)))
+        dsa = convert_list_number_to_float(load_file('./metrics/%s_dsa_fc1.txt' % (args.d)))
+        ts = convert_list_number_to_float(load_file('./metrics/%s_ts_fc1.txt' % (args.d))) 
+    
+    binary_predicted_true = convert_predict_and_true_to_binary(predicted=predicted, true=true)   
 
     ################################################################################################################
-    fpr_confidnet, tpr_confidnet, _ = roc_curve(confidnet_accurate, confidnet_score)
-    roc_auc_confidnet = auc(fpr_confidnet, tpr_confidnet)
+    if args.d == 'mnist' or args.d == 'cifar':
+        fpr_confidnet, tpr_confidnet, _ = roc_curve(confidnet_accurate, confidnet_score)
+        roc_auc_confidnet = auc(fpr_confidnet, tpr_confidnet)
     ################################################################################################################
 
     ################################################################################################################
@@ -58,8 +64,9 @@ if __name__ == '__main__':
     ################################################################################################################
 
     ################################################################################################################
-    fpr_ts, tpr_ts, _ = roc_curve(binary_predicted_true, ts)
-    roc_auc_ts = auc(fpr_ts, tpr_ts)
+    if args.d == 'mnist' or args.d == 'cifar'  or args.d == 'imagenet':
+        fpr_ts, tpr_ts, _ = roc_curve(binary_predicted_true, ts)
+        roc_auc_ts = auc(fpr_ts, tpr_ts)
     ################################################################################################################
 
     # method I: plt
@@ -85,6 +92,21 @@ if __name__ == '__main__':
         plt.plot(fpr_dsa, tpr_dsa, 'g', label = 'AUC_dsa = %0.2f' % roc_auc_dsa)
         plt.plot(fpr_ts, tpr_ts, 'm', label = 'AUC_ts = %0.2f' % roc_auc_ts) 
         plt.plot(fpr_confidnet, tpr_confidnet, 'k', label = 'AUC_confidnet = %0.2f' % roc_auc_confidnet) 
+        plt.legend(loc = 'lower right')
+        plt.plot([0, 1], [0, 1],'r--')
+        plt.xlim([0, 1])
+        plt.ylim([0, 1.05])
+        plt.ylabel('True Positive Rate')
+        plt.xlabel('False Positive Rate')
+        plt.savefig('./results/%s_roc_curve.jpg' % (args.d))
+
+    if args.d == 'imagenet':
+        plt.title('Receiver Operating Characteristic')
+        plt.plot(fpr_conf, tpr_conf, 'b', label = 'AUC_conf = %0.2f' % roc_auc_conf)
+        plt.plot(fpr_lsa, tpr_lsa, 'c', label = 'AUC_lsa = %0.2f' % roc_auc_lsa)
+        plt.plot(fpr_dsa, tpr_dsa, 'g', label = 'AUC_dsa = %0.2f' % roc_auc_dsa)
+        plt.plot(fpr_ts, tpr_ts, 'm', label = 'AUC_ts = %0.2f' % roc_auc_ts) 
+        # plt.plot(fpr_confidnet, tpr_confidnet, 'k', label = 'AUC_confidnet = %0.2f' % roc_auc_confidnet) 
         plt.legend(loc = 'lower right')
         plt.plot([0, 1], [0, 1],'r--')
         plt.xlim([0, 1])

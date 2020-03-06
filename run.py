@@ -225,6 +225,7 @@ if __name__ == "__main__":
     print(args)
 
     if args.d == 'imagenet':
+        args.num_classes = 1000
         print('Loading IMAGENET dataset -----------------------------')
         path_img_train = '../datasets/ilsvrc2012/images/train/'
         path_train_info = '../datasets/ilsvrc2012/images/train.txt'
@@ -277,7 +278,9 @@ if __name__ == "__main__":
 
     if args.true_label:
         if args.d == 'mnist' or args.d == 'cifar':
-            num_class = 10
+            num_class = 10        
+        elif args.d == 'imagenet':
+            num_class = 1000
         else:
             print('Please input the number of classes')
             exit()

@@ -5,6 +5,8 @@ import numpy as np
 from trust_score_example import trustscore
 from keras.utils import np_utils
 from utils import write_file
+from run import load_imagenet_random_train, load_imagenet_val
+from keras.applications.vgg16 import VGG16
 
 CLIP_MIN = -0.5
 CLIP_MAX = 0.5
@@ -49,6 +51,12 @@ if __name__ == '__main__':
     parser.add_argument(
         "--batch_size", "-batch_size", help="Batch size", type=int, default=128
     )
+    parser.add_argument(
+        "--random_train", "-random_train", help="random selected images for training (only for IMAGENET dataset)", action="store_true", default=False
+    )
+    parser.add_argument(
+        "--val", "-val", help="load validation dataset (only for IMAGENET dataset)", action="store_true", default=False
+    )
     """We have five different attacks:
         + Fast Gradient Sign Method (fgsm)
         + Basic Iterative Method (bim-a, bim-b, or bim)
@@ -57,7 +65,7 @@ if __name__ == '__main__':
     """
     parser.add_argument("--attack", "-attack", help="Define Attack Type", type=str, default="fgsm")
     args = parser.parse_args()
-    assert args.d in ["mnist", "cifar"], "Dataset should be either 'mnist' or 'cifar'"
+    assert args.d in ["mnist", "cifar", 'imagenet'], "Dataset should be either 'mnist' or 'cifar'"
     assert args.attack in ["fgsm", "bim", 'jsma', 'c+w'], "Dataset should be either 'fgsm', 'bim', 'jsma', 'c+w'"
     assert args.ts ^ args.adv_ts, "Select either 'lsa' or 'dsa' or etc."
     print(args)
@@ -76,24 +84,52 @@ if __name__ == '__main__':
 
             # Load pre-trained model.
             model = load_model("./model/cifar_model_improvement-491-0.88.h5")
-
-        model.summary()
         
-        x_train = x_train.astype("float32")
-        x_train = (x_train / 255.0) - (1.0 - CLIP_MAX)
-        x_test = x_test.astype("float32")
-        x_test = (x_test / 255.0) - (1.0 - CLIP_MAX)
+        elif args.d == 'imagenet':
+            print('Loading IMAGENET dataset -----------------------------')
+            path_img_train = '../datasets/ilsvrc2012/images/train/'
+            path_train_info = '../datasets/ilsvrc2012/images/train.txt'
+            x_train, y_train = load_imagenet_random_train(path_img=path_img_train, path_info=path_train_info, args=args)
 
-        y_pred = np.argmax(model.predict(x_test), axis=1)
+            path_img_val = '../datasets/ilsvrc2012/images/val/'
+            path_val_info = '../datasets/ilsvrc2012/images/val.txt'        
+            x_test, y_test = load_imagenet_val(path_img=path_img_val, path_info=path_val_info, args=args)                
+            print('Finish: Loading IMAGENET dataset -----------------------------')
 
-        x_train_ats_layer = get_attention_layer(x=x_train, model=model, args=args)
-        x_test_ats_layer = get_attention_layer(x=x_test, model=model, args=args)        
+        if args.d == 'mnist' or args.d == 'cifar':
+            model.summary()
+            
+            x_train = x_train.astype("float32")
+            x_train = (x_train / 255.0) - (1.0 - CLIP_MAX)
+            x_test = x_test.astype("float32")
+            x_test = (x_test / 255.0) - (1.0 - CLIP_MAX)
 
-        trust_model = trustscore.TrustScore()
-        trust_model.fit(x_train_ats_layer, y_train)
+            y_pred = np.argmax(model.predict(x_test), axis=1)
 
-        trust_score = trust_model.get_score(x_test_ats_layer, y_pred).tolist()        
-        write_file(path_file='./metrics/{}_ts_{}.txt'.format(args.d, args.layer), data=trust_score)
+            x_train_ats_layer = get_attention_layer(x=x_train, model=model, args=args)
+            x_test_ats_layer = get_attention_layer(x=x_test, model=model, args=args)        
+
+            trust_model = trustscore.TrustScore()
+            trust_model.fit(x_train_ats_layer, y_train)
+
+            trust_score = trust_model.get_score(x_test_ats_layer, y_pred).tolist()        
+            write_file(path_file='./metrics/{}_ts_{}.txt'.format(args.d, args.layer), data=trust_score)
+
+        if args.d == 'imagenet':
+            model = VGG16(weights='imagenet')
+            model.summary()
+
+            y_pred = np.argmax(model.predict(x_test), axis=1)
+
+            x_train_ats_layer = get_attention_layer(x=x_train, model=model, args=args)
+            x_test_ats_layer = get_attention_layer(x=x_test, model=model, args=args)        
+
+            trust_model = trustscore.TrustScore()
+            trust_model.fit(x_train_ats_layer, y_train)
+
+            trust_score = trust_model.get_score(x_test_ats_layer, y_pred).tolist()        
+            write_file(path_file='./metrics/{}_ts_{}.txt'.format(args.d, args.layer), data=trust_score)
+
 
     elif args.adv_ts: 
         if args.d == 'mnist':

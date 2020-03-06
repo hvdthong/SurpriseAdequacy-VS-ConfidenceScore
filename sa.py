@@ -81,6 +81,7 @@ def get_ats(
 
         pred = model.predict(dataset, batch_size=batch_size, verbose=1)
         pred = np.argmax(pred, axis=1)
+        
         if len(layer_names) == 1:
             layer_outputs = [
                 temp_model.predict(dataset, batch_size=batch_size, verbose=1)

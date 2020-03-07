@@ -86,65 +86,50 @@ class SmallConvNetMNISTSelfConfidClassic(nn.Module):
         pred = self.fc2(out)
         return pred, uncertainty
 
-class Conv2dSame(nn.Module):
-    def __init__(
-        self, in_channels, out_channels, kernel_size, bias=True, padding_layer=nn.ReflectionPad2d
-    ):
-        super().__init__()
-        ka = kernel_size // 2
-        kb = ka - 1 if kernel_size % 2 == 0 else ka
-        self.net = nn.Sequential(
-            padding_layer((ka, kb, ka, kb)),
-            nn.Conv2d(in_channels, out_channels, kernel_size, bias=bias),
-        )
-
-    def forward(self, x):
-        return self.net(x)
-
 class VGG16SelfConfidClassic(nn.Module):
     def __init__(self):
         super(VGG16SelfConfidClassic, self).__init__()
-        self.conv1 = Conv2dSame(3, 64, 3)
+        self.conv1 = nn.Conv2d(3, 64, 3, padding=1)
         self.conv1_bn = nn.BatchNorm2d(64)
         self.conv1_dropout = nn.Dropout(0.3)
-        self.conv2 = Conv2dSame(64, 64, 3)
+        self.conv2 = nn.Conv2d(64, 64, 3, padding=1)
         self.conv2_bn = nn.BatchNorm2d(64)
         self.maxpool1 = nn.MaxPool2d(2)
 
-        self.conv3 = Conv2dSame(64, 128, 3)
+        self.conv3 = nn.Conv2d(64, 128, 3, padding=1)
         self.conv3_bn = nn.BatchNorm2d(128)
         self.conv3_dropout = nn.Dropout(0.4)
-        self.conv4 = Conv2dSame(128, 128, 3)
+        self.conv4 = nn.Conv2d(128, 128, 3, padding=1)
         self.conv4_bn = nn.BatchNorm2d(128)
         self.maxpool2 = nn.MaxPool2d(2)
 
-        self.conv5 = Conv2dSame(128, 256, 3)
+        self.conv5 = nn.Conv2d(128, 256, 3, padding=1)
         self.conv5_bn = nn.BatchNorm2d(256)
         self.conv5_dropout = nn.Dropout(0.4)
-        self.conv6 = Conv2dSame(256, 256, 3)
+        self.conv6 = nn.Conv2d(256, 256, 3, padding=1)
         self.conv6_bn = nn.BatchNorm2d(256)
         self.conv6_dropout = nn.Dropout(0.4)
-        self.conv7 = Conv2dSame(256, 256, 3)
+        self.conv7 = nn.Conv2d(256, 256, 3, padding=1)
         self.conv7_bn = nn.BatchNorm2d(256)
         self.maxpool3 = nn.MaxPool2d(2)
 
-        self.conv8 = Conv2dSame(256, 512, 3)
+        self.conv8 = nn.Conv2d(256, 512, 3, padding=1)
         self.conv8_bn = nn.BatchNorm2d(512)
         self.conv8_dropout = nn.Dropout(0.4)
-        self.conv9 = Conv2dSame(512, 512, 3)
+        self.conv9 = nn.Conv2d(512, 512, 3, padding=1)
         self.conv9_bn = nn.BatchNorm2d(512)
         self.conv9_dropout = nn.Dropout(0.4)
-        self.conv10 = Conv2dSame(512, 512, 3)
+        self.conv10 = nn.Conv2d(512, 512, 3, padding=1)
         self.conv10_bn = nn.BatchNorm2d(512)
         self.maxpool4 = nn.MaxPool2d(2)
 
-        self.conv11 = Conv2dSame(512, 512, 3)
+        self.conv11 = nn.Conv2d(512, 512, 3, padding=1)
         self.conv11_bn = nn.BatchNorm2d(512)
         self.conv11_dropout = nn.Dropout(0.4)
-        self.conv12 = Conv2dSame(512, 512, 3)
+        self.conv12 = nn.Conv2d(512, 512, 3, padding=1)
         self.conv12_bn = nn.BatchNorm2d(512)
         self.conv12_dropout = nn.Dropout(0.4)
-        self.conv13 = Conv2dSame(512, 512, 3)
+        self.conv13 = nn.Conv2d(512, 512, 3, padding=1)
         self.conv13_bn = nn.BatchNorm2d(512)
         self.maxpool5 = nn.MaxPool2d(2)
 
@@ -160,11 +145,14 @@ class VGG16SelfConfidClassic(nn.Module):
         self.uncertainty4 = nn.Linear(400, 400)
         self.uncertainty5 = nn.Linear(400, 1)
 
-    def forward(self, x):        
+    def forward(self, x):
+        # import pdb; pdb.set_trace()
+
         out = F.relu(self.conv1(x))
         out = self.conv1_bn(out)        
         out = self.conv1_dropout(out)
         out = F.relu(self.conv2(out))
+        
         out = self.conv2_bn(out)
         out = self.maxpool1(out)
 
@@ -269,26 +257,30 @@ def train(args):
         x_train, y_train = torch.Tensor(x_train.reshape(-1, 1, 28, 28)), torch.Tensor(y_train)
         x_test, y_test = torch.Tensor(x_test.reshape(-1, 1, 28, 28)), torch.Tensor(y_test)
 
-    elif args.d == 'cifar':
-        (x_train, y_train), (x_test, y_test) = cifar10.load_data()
-        x_train = x_train.astype("float32")
-        x_test = x_test.astype("float32")
-
-        x_train = (x_train / 255.0) - (1.0 - CLIP_MAX)
-        x_test = (x_test / 255.0) - (1.0 - CLIP_MAX)
-
-        x_train, y_train = torch.Tensor(x_train.reshape(-1, 3, 32, 32)), torch.Tensor(y_train)
-        x_test, y_test = torch.Tensor(x_test.reshape(-1, 3, 32, 32)), torch.Tensor(y_test)
-
-        y_train, y_test = torch.flatten(y_train), torch.flatten(y_test)
-
-    
-    train = TensorDataset(x_train, y_train)
-    train_loader = DataLoader(train, batch_size=args.batch_size, shuffle=True)
-    
-    test = TensorDataset(x_test, y_test)
-    test_loader = DataLoader(test, batch_size=args.batch_size, shuffle=False)
+        train = TensorDataset(x_train, y_train)
+        train_loader = DataLoader(train, batch_size=args.batch_size, shuffle=True)
         
+        test = TensorDataset(x_test, y_test)
+        test_loader = DataLoader(test, batch_size=args.batch_size, shuffle=False)
+
+    elif args.d == 'cifar':
+        transform_train = transforms.Compose([
+            transforms.RandomCrop(32, padding=4),
+            transforms.RandomHorizontalFlip(),
+            transforms.ToTensor(),
+            transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
+        ])
+
+        transform_test = transforms.Compose([
+            transforms.ToTensor(),
+            transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
+        ])
+
+        trainset = torchvision.datasets.CIFAR10(root='./dataset', train=True, download=args.download, transform=transform_train)
+        train_loader = DataLoader(trainset, batch_size=args.batch_size, shuffle=True, num_workers=2)
+
+        testset = torchvision.datasets.CIFAR10(root='./dataset', train=False, download=args.download, transform=transform_test)
+        test_loader = DataLoader(testset, batch_size=args.batch_size, shuffle=False, num_workers=2)
 
     if args.d == 'mnist' or args.d == 'cifar':
         if args.train_clf:
@@ -305,9 +297,8 @@ def train(args):
             if args.d == 'mnist':
                 optimizer = torch.optim.SGD(model.parameters(), lr=0.0001, momentum=0.9)
             if args.d == 'cifar':
-                # optimizer = torch.optim.Adam(model.parameters(), lr=0.00001)
-                optimizer = torch.optim.SGD(model.parameters(), lr=0.0001, momentum=0.9, weight_decay=1e-6)                
-            
+                optimizer = torch.optim.Adam(model.parameters(), lr=0.00001)                
+            general_acc = 0
             for epoch in range(args.epoch):
                 total_loss = 0
                 for i, (x, y) in enumerate(Bar(train_loader)):
@@ -322,24 +313,29 @@ def train(args):
                     loss.backward()
                     total_loss += loss
                     optimizer.step()
+                
                 accuracy = eval(model=model, test_loader=test_loader)
-                print('Epoch %i / %i -- Total loss: %f -- Accuracy on testing data: %.2f' % (epoch, args.epoch, total_loss, accuracy))                
+                print('Epoch %i / %i -- Total loss: %f -- Accuracy on testing data: %.2f' % (epoch, args.epoch, total_loss, accuracy))                      
 
-                if epoch % 50 == 0:
+                if accuracy > general_acc:
+                    general_acc = accuracy
                     path_save = './model_confidnet/%s/train_clf/' % (args.d)
                     if not os.path.exists(path_save):
                         os.makedirs(path_save)
                     torch.save(model.state_dict(), path_save + 'epoch_%i_acc-%.2f.pt' % (epoch, accuracy))
+                    print('Model improvement -- Saving into: ', path_save + 'epoch_%i_acc-%.2f.pt' % (epoch, accuracy))                
+
 
         if args.train_uncertainty == True:
             if args.d == 'mnist':
                 model = SmallConvNetMNISTSelfConfidClassic().to(device)
-                model.load_state_dict(torch.load('./model_confidnet/%s/train_clf/epoch_420_acc-98.58.pt'% (args.d)))
+                model.load_state_dict(torch.load('./model_confidnet/%s/train_clf/epoch_420_acc-98.58.pt' % (args.d)))
             if args.d == 'cifar':
                 model = VGG16SelfConfidClassic().to(device)
-                exit()
+                model.load_state_dict(torch.load('./model_confidnet/%s/train_clf/epoch_29_acc-77.94.pt' % (args.d)))
 
-            model = freeze_layers(model=model, freeze_uncertainty_layers=False)            
+            model = freeze_layers(model=model, freeze_uncertainty_layers=False)
+            accuracy, roc_score = eval_uncertainty(model=model, test_loader=test_loader)            
 
             # Loss and optimizer
             optimizer = torch.optim.Adam(model.parameters(), lr=0.00001)
@@ -383,6 +379,9 @@ if __name__ == '__main__':
     )
     parser.add_argument(
         "--epoch", "-epoch", help="Epoch", type=int, default=1000
+    )
+    parser.add_argument(
+        "--download", "-download", help="Download dataset", action="store_true"
     )
     args = parser.parse_args()
     assert args.d in ["mnist", "cifar", 'imagenet'], "Dataset should be either 'mnist' or 'cifar' or 'imagenet'"

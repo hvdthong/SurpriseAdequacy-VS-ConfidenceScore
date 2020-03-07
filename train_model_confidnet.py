@@ -218,7 +218,6 @@ class VGG16SelfConfidClassic(nn.Module):
         pred = self.fc2(out)
         return pred, uncertainty
 
-
 CLIP_MIN = -0.5
 CLIP_MAX = 0.5
 

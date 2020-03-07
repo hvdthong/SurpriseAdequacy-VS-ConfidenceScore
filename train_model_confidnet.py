@@ -332,7 +332,7 @@ def train(args):
                 model.load_state_dict(torch.load('./model_confidnet/%s/train_clf/epoch_420_acc-98.58.pt' % (args.d)))
             if args.d == 'cifar':
                 model = VGG16SelfConfidClassic().to(device)
-                model.load_state_dict(torch.load('./model_confidnet/%s/train_clf/epoch_29_acc-77.94.pt' % (args.d)))
+                model.load_state_dict(torch.load('./model_confidnet/%s/train_clf/epoch_183_acc-82.58.pt' % (args.d)))
 
             model = freeze_layers(model=model, freeze_uncertainty_layers=False)
             accuracy, roc_score = eval_uncertainty(model=model, test_loader=test_loader)            
@@ -355,14 +355,14 @@ def train(args):
                     optimizer.step()
 
                 accuracy, roc_score = eval_uncertainty(model=model, test_loader=test_loader)
-                print('Epoch %i -- Total loss: %f -- Accuracy on testing data: %.2f -- AUC on testing data: %.2f' 
-                        % (epoch, total_loss, accuracy, roc_score))
+                print('Epoch %i / %i -- Total loss: %f -- Accuracy on testing data: %.2f -- AUC on testing data: %.2f' 
+                        % (epoch, args.epoch, total_loss, accuracy, roc_score))
 
-                if epoch % 50 == 0:
-                    path_save = './model_confidnet/%s/train_uncertainty/' % (args.d)
-                    if not os.path.exists(path_save):
-                        os.makedirs(path_save)
-                    torch.save(model.state_dict(), path_save + 'epoch_%i_acc-%.2f_auc-%.2f.pt' % (epoch, accuracy, roc_score))
+                # if epoch % 50 == 0:
+                #     path_save = './model_confidnet/%s/train_uncertainty/' % (args.d)
+                #     if not os.path.exists(path_save):
+                #         os.makedirs(path_save)
+                #     torch.save(model.state_dict(), path_save + 'epoch_%i_acc-%.2f_auc-%.2f.pt' % (epoch, accuracy, roc_score))
 
 
 if __name__ == '__main__':

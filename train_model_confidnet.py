@@ -273,6 +273,7 @@ def train(args):
         (x_train, y_train), (x_test, y_test) = cifar10.load_data()
         x_train = x_train.astype("float32")
         x_test = x_test.astype("float32")
+
         x_train = (x_train / 255.0) - (1.0 - CLIP_MAX)
         x_test = (x_test / 255.0) - (1.0 - CLIP_MAX)
 
@@ -280,12 +281,14 @@ def train(args):
         x_test, y_test = torch.Tensor(x_test.reshape(-1, 3, 32, 32)), torch.Tensor(y_test)
 
         y_train, y_test = torch.flatten(y_train), torch.flatten(y_test)
-        
-    train = TensorDataset(x_train, y_train)
-    train_loader = DataLoader(train, batch_size=128, shuffle=True)
 
+    
+    train = TensorDataset(x_train, y_train)
+    train_loader = DataLoader(train, batch_size=args.batch_size, shuffle=True)
+    
     test = TensorDataset(x_test, y_test)
-    test_loader = DataLoader(test, batch_size=128, shuffle=False)
+    test_loader = DataLoader(test, batch_size=args.batch_size, shuffle=False)
+        
 
     if args.d == 'mnist' or args.d == 'cifar':
         if args.train_clf:
@@ -294,12 +297,17 @@ def train(args):
             if args.d == 'cifar':
                 model = VGG16SelfConfidClassic().to(device)
 
-            model = freeze_layers(model=model, freeze_uncertainty_layers=True)
+            model = freeze_layers(model=model, freeze_uncertainty_layers=True)            
 
             # Loss and optimizer
-            criterion = nn.CrossEntropyLoss()        
-            optimizer = torch.optim.SGD(model.parameters(), lr=0.0001, momentum=0.9)
+            criterion = nn.CrossEntropyLoss()            
 
+            if args.d == 'mnist':
+                optimizer = torch.optim.SGD(model.parameters(), lr=0.0001, momentum=0.9)
+            if args.d == 'cifar':
+                # optimizer = torch.optim.Adam(model.parameters(), lr=0.00001)
+                optimizer = torch.optim.SGD(model.parameters(), lr=0.0001, momentum=0.9, weight_decay=1e-6)                
+            
             for epoch in range(args.epoch):
                 total_loss = 0
                 for i, (x, y) in enumerate(Bar(train_loader)):
@@ -315,7 +323,7 @@ def train(args):
                     total_loss += loss
                     optimizer.step()
                 accuracy = eval(model=model, test_loader=test_loader)
-                print('Epoch %i -- Total loss: %f -- Accuracy on testing data: %.2f' % (epoch, total_loss, accuracy))                
+                print('Epoch %i / %i -- Total loss: %f -- Accuracy on testing data: %.2f' % (epoch, args.epoch, total_loss, accuracy))                
 
                 if epoch % 50 == 0:
                     path_save = './model_confidnet/%s/train_clf/' % (args.d)
@@ -371,7 +379,7 @@ if __name__ == '__main__':
         "--train_uncertainty", "-train_uncertainty", help="Train the confidnet for uncertainty model", action="store_true"
     )   
     parser.add_argument(
-        "--batch_size", "-batch_size", help="Batch size", type=int, default=128
+        "--batch_size", "-batch_size", help="Batch size", type=int, default=64
     )
     parser.add_argument(
         "--epoch", "-epoch", help="Epoch", type=int, default=1000

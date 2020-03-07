@@ -20,8 +20,11 @@ if __name__ == '__main__':
         dsa = convert_list_number_to_float(load_file('./metrics/%s_dsa_activation_3.txt' % (args.d)))
         ts = convert_list_number_to_float(load_file('./metrics/%s_ts_activation_3.txt' % (args.d)))
         
-        confidnet_accurate = convert_list_string_to_True_False(load_file('./metrics/%s_confidnet_accurate_epoch_11.txt' % (args.d)))
-        confidnet_score = convert_list_number_to_float(load_file('./metrics/%s_confidnet_score_epoch_11.txt' % (args.d)))
+        # confidnet_accurate = convert_list_string_to_True_False(load_file('./metrics/%s_confidnet_accurate_epoch_11.txt' % (args.d)))
+        # confidnet_score = convert_list_number_to_float(load_file('./metrics/%s_confidnet_score_epoch_11.txt' % (args.d)))
+
+        confidnet_accurate = convert_list_string_to_True_False(load_file('./metrics/%s_confidnet_accurate.txt' % (args.d)))
+        confidnet_score = convert_list_number_to_float(load_file('./metrics/%s_confidnet_score.txt' % (args.d)))
     
     if args.d == 'cifar':
         lsa = convert_list_number_to_float(load_file('./metrics/%s_lsa_activation_11.txt' % (args.d)))

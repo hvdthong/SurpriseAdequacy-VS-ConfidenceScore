@@ -31,9 +31,12 @@ if __name__ == '__main__':
         dsa = convert_list_number_to_float(load_file('./metrics/%s_dsa_activation_11.txt' % (args.d)))
         ts = convert_list_number_to_float(load_file('./metrics/%s_ts_activation_11.txt' % (args.d)))
 
-        confidnet_accurate = convert_list_string_to_True_False(load_file('./metrics/%s10_confidnet_accurate_epoch_162.txt' % (args.d)))
-        confidnet_accurate = use_for_confidnet_cifar10(confidnet_accurate, 65)
-        confidnet_score = convert_list_number_to_float(load_file('./metrics/%s10_confidnet_score_epoch_162.txt' % (args.d)))
+        # confidnet_accurate = convert_list_string_to_True_False(load_file('./metrics/%s10_confidnet_accurate_epoch_162.txt' % (args.d)))
+        # confidnet_accurate = use_for_confidnet_cifar10(confidnet_accurate, 65)
+        # confidnet_score = convert_list_number_to_float(load_file('./metrics/%s10_confidnet_score_epoch_162.txt' % (args.d)))
+
+        confidnet_accurate = convert_list_string_to_True_False(load_file('./metrics/%s_confidnet_accurate.txt' % (args.d)))
+        confidnet_score = convert_list_number_to_float(load_file('./metrics/%s_confidnet_score.txt' % (args.d)))
     
     if args.d == 'imagenet':
         lsa = convert_list_number_to_float(load_file('./metrics/%s_lsa_fc1.txt' % (args.d)))

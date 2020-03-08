@@ -332,7 +332,7 @@ def eval(model, test_loader):
     model.eval()  # eval mode (batchnorm uses moving mean/variance instead of mini-batch mean/variance)
     with torch.no_grad():
         correct, total = 0, 0    
-        for x, y in test_loader:          
+        for i, (x, y) in enumerate(Bar(test_loader)):
             x, y = x.to(device), y.to(device, dtype=torch.long)
             outputs, uncertainty = model(x)
             _, predicted = torch.max(outputs.data, 1)
@@ -346,7 +346,7 @@ def eval_uncertainty(model, test_loader):
     with torch.no_grad():
         correct, total = 0, 0
         uncertainties, pred, groundtruth = list(), list(), list()
-        for x, y in test_loader:            
+        for i, (x, y) in enumerate(Bar(test_loader)):   
             x, y = x.to(device), y.to(device, dtype=torch.long)            
             outputs, uncertainty = model(x)
             pred.append(outputs)

@@ -4,11 +4,13 @@ from keras import backend
 import keras
 from keras.datasets import mnist, cifar10
 from keras.models import load_model
+from keras.applications.vgg16 import VGG16
 
 # Using https://github.com/IBM/adversarial-robustness-toolbox to create adversarial examples
 from art.classifiers import KerasClassifier
 from art.attacks import FastGradientMethod, BasicIterativeMethod, SaliencyMapMethod, CarliniL2Method
 import numpy as np
+from run import load_imagenet_val
 
 CLIP_MIN = -0.5
 CLIP_MAX = 0.5
@@ -27,7 +29,7 @@ if __name__ == '__main__':
     parser.add_argument("--d", "-d", help="Dataset", type=str, default="mnist")
     parser.add_argument("--attack", "-attack", help="Define Attack Type", type=str, default="fgsm")
     args = parser.parse_args()
-    assert args.d in ["mnist", "cifar"], "Dataset should be either 'mnist' or 'cifar'"
+    assert args.d in ["mnist", "cifar", 'imagenet'], "Dataset should be either 'mnist' or 'cifar'"
     assert args.attack in ["fgsm", "bim-a", "bim-b", "bim", "jsma", "c+w"], "Attack we should used"
     print(args)
 
@@ -52,11 +54,29 @@ if __name__ == '__main__':
         model = load_model("./model/cifar_model_improvement-491-0.88.h5")
         classifier = KerasClassifier(model=model, clip_values=(-0.5, 0.5), use_logits=False)
 
+    if args.d == 'imagenet':
+        args.num_classes = 1000
+        args.val = False
+
+        path_img_val = '../datasets/ilsvrc2012/images/val/'
+        path_val_info = '../datasets/ilsvrc2012/images/val.txt'        
+        x_test, y_test = load_imagenet_val(path_img=path_img_val, path_info=path_val_info, args=args)                        
+
+        x_test = x_test.astype("float32")
+        x_test = (x_test / 255.0) - (1.0 - CLIP_MAX)
+
+        model = VGG16(weights='imagenet')
+        classifier = KerasClassifier(model=model, clip_values=(-0.5, 0.5), use_logits=False)
+
+
     if args.attack == 'fgsm':
         attack = FastGradientMethod(classifier=classifier, eps=0.6, eps_step=0.6, batch_size=64)
 
     if args.attack == 'bim':
-        attack = BasicIterativeMethod(classifier=classifier, eps=0.6, batch_size=64)
+        if args.d == 'imagenet':
+            attack = BasicIterativeMethod(classifier=classifier, eps=0.6, batch_size=64, max_iter=25)
+        else:    
+            attack = BasicIterativeMethod(classifier=classifier, eps=0.6, batch_size=64)
 
     if args.attack == 'jsma':
         attack = SaliencyMapMethod(classifier=classifier, batch_size=64)
@@ -66,7 +86,7 @@ if __name__ == '__main__':
     
     # generating adversarial of the testing dataset and save it to the folder './adv'
     x_adv = attack.generate(x=x_test)
-    np.save('./adv/{}_{}.npy'.format(args.d, args.attack), x_adv)    
+    np.save('./adv/{}_{}.npy'.format(args.d, args.attack), x_adv)
 
     # accuracy of our test data
     pred = np.argmax(classifier.predict(x_test), axis=1)

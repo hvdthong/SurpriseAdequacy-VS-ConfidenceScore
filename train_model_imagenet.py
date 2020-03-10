@@ -5,6 +5,9 @@ from keras.applications.vgg16 import VGG16
 from run import load_header_imagenet
 import numpy as np
 from keras.applications.resnet import ResNet152
+from keras.applications.resnet_v2 import ResNet152V2
+from keras.applications.densenet import DenseNet201
+from keras.applications.inception_resnet_v2 import InceptionResNetV2
 
 def preprocessing_imagenet(img_path, args):
     """Process the image of ImageNet data
@@ -14,13 +17,22 @@ def preprocessing_imagenet(img_path, args):
     Returns:        
         x (array): array of the image        
     """
-    img = image.load_img(img_path, target_size=(224, 224))
+    if args.model == 'inceptionresnetv2':
+        img = image.load_img(img_path, target_size=(299, 299))
+    else:
+        img = image.load_img(img_path, target_size=(224, 224))
     x = image.img_to_array(img)
     x = np.expand_dims(x, axis=0)
     if args.model == 'vgg16':
         from keras.applications.vgg16 import preprocess_input
     elif args.model == 'resnet152':
         from keras.applications.resnet import preprocess_input
+    elif args.model == 'resnet152v2':
+        from keras.applications.resnet_v2 import preprocess_input
+    elif args.model == 'densenet201':
+        from keras.applications.densenet import preprocess_input
+    elif args.model == 'inceptionresnetv2':
+        from keras.applications.inception_resnet_v2 import preprocess_input
     x = preprocess_input(x)
     return x
 
@@ -35,7 +47,15 @@ def evaluation(args):
     elif args.model == 'resnet152':
         model = ResNet152(weights='imagenet')
         model.summary()
-
+    elif args.model == 'resnet152v2':
+        model = ResNet152V2(weights='imagenet')
+        model.summary()
+    elif args.model == 'inceptionresnetv2':
+        model = InceptionResNetV2(weights='imagenet')
+        model.summary()
+    elif args.model == 'densenet201':
+        model = DenseNet201(weights='imagenet')
+        model.summary()
 
     name, label = load_header_imagenet(load_file(path_val_info))    
     pred = list()
@@ -54,7 +74,7 @@ if __name__ == '__main__':
     parser.add_argument("--d", "-d", help="Dataset", type=str, default="imagenet")
     parser.add_argument("--model", "-model", help="Model for Imagenet", type=str, default="vgg16")
     args = parser.parse_args()
-    assert args.d in ["mnist", "cifar", 'imagenet'], "Dataset should be either 'mnist' or 'cifar'"
+    assert args.d in ['imagenet'], "IMGAENET Dataset"
     print(args)
 
     evaluation(args)

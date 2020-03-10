@@ -7,9 +7,97 @@ import numpy as np
 from utils import convert_predict_and_true_to_binary, write_file
 import torchvision.transforms as transforms
 import torchvision
+import torch.nn as nn
+import torchvision.models as models
+from torch.utils.model_zoo import load_url as load_state_dict_from_url
+
 
 CLIP_MIN = -0.5
 CLIP_MAX = 0.5
+
+__all__ = [
+    'VGG', 'vgg11', 'vgg11_bn', 'vgg13', 'vgg13_bn', 'vgg16', 'vgg16_bn',
+    'vgg19_bn', 'vgg19',
+]
+
+
+model_urls = {
+    'vgg11': 'https://download.pytorch.org/models/vgg11-bbd30ac9.pth',
+    'vgg13': 'https://download.pytorch.org/models/vgg13-c768596a.pth',
+    'vgg16': 'https://download.pytorch.org/models/vgg16-397923af.pth',
+    'vgg19': 'https://download.pytorch.org/models/vgg19-dcbb9e9d.pth',
+    'vgg11_bn': 'https://download.pytorch.org/models/vgg11_bn-6002323d.pth',
+    'vgg13_bn': 'https://download.pytorch.org/models/vgg13_bn-abd245e5.pth',
+    'vgg16_bn': 'https://download.pytorch.org/models/vgg16_bn-6c64b313.pth',
+    'vgg19_bn': 'https://download.pytorch.org/models/vgg19_bn-c79401a0.pth',
+}
+
+class VGG(nn.Module):
+    def __init__(self, features, num_classes=1000, init_weights=True):
+        super(VGG, self).__init__()
+        self.features = features
+        self.avgpool = nn.AdaptiveAvgPool2d((7, 7))
+        self.classifier = nn.Sequential(
+            nn.Linear(512 * 7 * 7, 4096),
+            nn.ReLU(True),
+            nn.Dropout(),
+            nn.Linear(4096, 4096),
+            nn.ReLU(True),
+            nn.Dropout(),
+            nn.Linear(4096, num_classes),
+        )
+
+        self.uncertainty1 = nn.Linear(512 * 7 * 7, 4096)
+        self.uncertainty2 = nn.Linear(4096, 1000)
+        self.uncertainty3 = nn.Linear(1000, 1000)        
+        self.uncertainty4 = nn.Linear(1000, 1)
+
+    def forward(self, x):
+        x = self.features(x)
+        x = self.avgpool(x)
+        x = torch.flatten(x, 1)        
+        pred = self.classifier(x)
+
+        uncertainty = F.relu(self.uncertainty1(x))
+        uncertainty = F.relu(self.uncertainty2(uncertainty))
+        uncertainty = F.relu(self.uncertainty3(uncertainty))        
+        uncertainty = self.uncertainty4(uncertainty)
+        return pred, uncertainty
+
+
+def make_layers(cfg, batch_norm=False):
+    layers = []
+    in_channels = 3
+    for v in cfg:
+        if v == 'M':
+            layers += [nn.MaxPool2d(kernel_size=2, stride=2)]
+        else:
+            conv2d = nn.Conv2d(in_channels, v, kernel_size=3, padding=1)
+            if batch_norm:
+                layers += [conv2d, nn.BatchNorm2d(v), nn.ReLU(inplace=True)]
+            else:
+                layers += [conv2d, nn.ReLU(inplace=True)]
+            in_channels = v
+    return nn.Sequential(*layers)
+
+
+cfgs = {
+    'A': [64, 'M', 128, 'M', 256, 256, 'M', 512, 512, 'M', 512, 512, 'M'],
+    'B': [64, 64, 'M', 128, 128, 'M', 256, 256, 'M', 512, 512, 'M', 512, 512, 'M'],
+    'D': [64, 64, 'M', 128, 128, 'M', 256, 256, 256, 'M', 512, 512, 512, 'M', 512, 512, 512, 'M'],
+    'E': [64, 64, 'M', 128, 128, 'M', 256, 256, 256, 256, 'M', 512, 512, 512, 512, 'M', 512, 512, 512, 512, 'M'],
+}
+
+
+def _vgg(arch, cfg, batch_norm, pretrained, progress):    
+    model = VGG(make_layers(cfgs[cfg], batch_norm=batch_norm)).to(device)
+    if pretrained:
+        state_dict = load_state_dict_from_url(model_urls[arch],
+                                              progress=progress)        
+        model.load_state_dict(state_dict, strict=False)
+    return model
+
+
 
 def confidnet_score(model, test_loader):
     model.eval()  # eval mode (batchnorm uses moving mean/variance instead of mini-batch mean/variance)
@@ -88,7 +176,7 @@ if __name__ == '__main__':
         
         if args.d == 'mnist':
             model = SmallConvNetMNISTSelfConfidClassic().to(device)
-            model.load_state_dict(torch.load('./model_confidnet/%s/train_uncertainty/epoch_950_acc-0.99_auc-0.92.pt'% (args.d)))
+            model.load_state_dict(torch.load('./model_confidnet/%s/train_uncertainty/epoch_950_acc-0.99_auc-0.92.pt' % (args.d)))
             if args.confidnet == True:
                 score, accurate = confidnet_score(model=model, test_loader=test_loader)
                 write_file(path_file='./metrics/{}_confidnet_score.txt'.format(args.d), data=score)
@@ -102,3 +190,19 @@ if __name__ == '__main__':
                 score, accurate = confidnet_score(model=model, test_loader=test_loader)
                 write_file(path_file='./metrics/{}_confidnet_score.txt'.format(args.d), data=score)
                 write_file(path_file='./metrics/{}_confidnet_accurate.txt'.format(args.d), data=accurate)
+        
+        if args.d == 'imagenet':            
+            # model = VGG().to(device)
+            # model.load_state_dict(torch.load(models.vgg16(pretrained=True)))
+            # print(type(model))
+
+            # model = _vgg('vgg16', 'D', False, True, False)
+            # print(type(model))
+
+            # for param in model.named_parameters():
+            #     print(param[0], param[1].requires_grad)
+
+            model = models.vgg16(pretrained=True)
+
+            for param in model.named_parameters():
+                print(param[0], param[1].requires_grad)

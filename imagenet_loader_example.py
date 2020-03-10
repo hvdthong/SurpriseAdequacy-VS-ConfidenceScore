@@ -52,6 +52,37 @@ def saving_batch_size_imagenet(args, path_imagenet_folder, path_imagnet_info):
     
 
 if __name__ == '__main__':
+    # import torchvision.models as models
+    # model = models.vgg16(pretrained=True)
+
+    # for param in model.named_parameters():
+    #     print(param[0], param[1].requires_grad)
+
+    from vgg_imagenet import vgg16
+    from torchvision import transforms
+
+    transform = transforms.Compose([
+        transforms.Resize(256),
+        transforms.CenterCrop(224), 
+        transforms.ToTensor(),
+        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]
+    )])
+
+    from PIL import Image
+    path_img = '../datasets/ilsvrc2012/images/val/ILSVRC2012_val_00000001.JPEG'
+    img = Image.open(path_img)
+    img_t = transform(img)
+    import torch
+    batch_t = torch.unsqueeze(img_t, 0)
+
+    print(img_t.shape)
+    print(batch_t.shape)
+    exit()
+
+    model = vgg16(pretrained=True)
+    for param in model.named_parameters():
+        print(param[0], param[1].requires_grad)
+
     # parser = argparse.ArgumentParser()
     # parser.add_argument(
     #     "--batch_size", "-batch_size", help="Batch size", type=int, default=128
@@ -67,52 +98,52 @@ if __name__ == '__main__':
     # path_imagenet_val = '../datasets/ilsvrc2012/images/val/'
     # path_imagenet_val_info = '../datasets/ilsvrc2012/images/val.txt'
 
-    import torchvision.datasets as datasets
-    import torchvision.transforms as transforms
-    import torch
+    # import torchvision.datasets as datasets
+    # import torchvision.transforms as transforms
+    # import torch
 
-    traindir = '../datasets/ilsvrc2012/images/train/'    
-    normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
-                                     std=[0.229, 0.224, 0.225])
-    train_dataset = datasets.ImageFolder(
-        traindir,
-        transforms.Compose([
-            transforms.RandomResizedCrop(224),
-            transforms.RandomHorizontalFlip(),
-            transforms.ToTensor(),
-            normalize,
-        ]))
-    train_loader = torch.utils.data.DataLoader(
-        train_dataset, batch_size=128, shuffle=True,
-        num_workers=2, pin_memory=True)
-    print(len(train_loader))
-    for i, (images, target) in enumerate(train_loader):
-        print(images)
-        print(target)
-        print(images.shape, target.shape)
-        print(type(images), type(target))
-        exit()
+    # traindir = '../datasets/ilsvrc2012/images/train/'    
+    # normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
+    #                                  std=[0.229, 0.224, 0.225])
+    # train_dataset = datasets.ImageFolder(
+    #     traindir,
+    #     transforms.Compose([
+    #         transforms.RandomResizedCrop(224),
+    #         transforms.RandomHorizontalFlip(),
+    #         transforms.ToTensor(),
+    #         normalize,
+    #     ]))
+    # train_loader = torch.utils.data.DataLoader(
+    #     train_dataset, batch_size=128, shuffle=True,
+    #     num_workers=2, pin_memory=True)
+    # print(len(train_loader))
+    # for i, (images, target) in enumerate(train_loader):
+    #     print(images)
+    #     print(target)
+    #     print(images.shape, target.shape)
+    #     print(type(images), type(target))
+    #     exit()
 
-    valdir = '../datasets/ilsvrc2012/images/val_loader/'    
-    normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
-                                     std=[0.229, 0.224, 0.225])
-    val_dataset = datasets.ImageFolder(
-        valdir,
-        transforms.Compose([
-            transforms.RandomResizedCrop(224),
-            transforms.RandomHorizontalFlip(),
-            transforms.ToTensor(),
-            normalize,
-        ]))
-    val_loader = torch.utils.data.DataLoader(
-        val_dataset, batch_size=128, shuffle=True,
-        num_workers=2, pin_memory=True)
-    print(len(val_loader))
-    for i, (images, target) in enumerate(val_loader):
-        print(images)
-        print(target)
-        print(images.shape, target.shape)
-        exit()
+    # valdir = '../datasets/ilsvrc2012/images/val_loader/'    
+    # normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
+    #                                  std=[0.229, 0.224, 0.225])
+    # val_dataset = datasets.ImageFolder(
+    #     valdir,
+    #     transforms.Compose([
+    #         transforms.RandomResizedCrop(224),
+    #         transforms.RandomHorizontalFlip(),
+    #         transforms.ToTensor(),
+    #         normalize,
+    #     ]))
+    # val_loader = torch.utils.data.DataLoader(
+    #     val_dataset, batch_size=128, shuffle=True,
+    #     num_workers=2, pin_memory=True)
+    # print(len(val_loader))
+    # for i, (images, target) in enumerate(val_loader):
+    #     print(images)
+    #     print(target)
+    #     print(images.shape, target.shape)
+    #     exit()
     
     # path_imagenet_val = '../datasets/ilsvrc2012/images/val/'
     # valdir = path_imagenet_val

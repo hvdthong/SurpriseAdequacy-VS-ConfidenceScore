@@ -1,0 +1,54 @@
+from keras.preprocessing import image
+import argparse
+from utils import load_file
+from keras.applications.vgg16 import VGG16
+from run import load_header_imagenet
+import numpy as np
+
+def preprocessing_imagenet(img_path, args):
+    """Process the image of ImageNet data
+    
+    Args:
+        img_path (string): Path of image
+    Returns:        
+        x (array): array of the image        
+    """
+    img = image.load_img(img_path, target_size=(224, 224))
+    x = image.img_to_array(img)
+    x = np.expand_dims(x, axis=0)
+    if args.model == 'vgg16':
+        from keras.applications.vgg16 import preprocess_input
+    if args.model == 'resnet152':
+        from keras.applications.resnet import preprocess_input
+    x = preprocess_input(x)
+    return x
+
+
+def evaluation(args):
+    path_img_val = '../datasets/ilsvrc2012/images/val/'
+    path_val_info = '../datasets/ilsvrc2012/images/val.txt'        
+
+    if args.model == 'vgg16':
+        model = VGG16(weights='imagenet')
+        model.summary()
+
+    name, label = load_header_imagenet(load_file(path_val_info))
+    accuracy = 0
+    for n, l in zip(name, label):
+        x = preprocessing_imagenet(path_img_val + n, args)
+        pred = model.predict(x)
+        print(np.argmax(pred, axis=1), l)
+        exit()
+    
+
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--d", "-d", help="Dataset", type=str, default="imagenet")
+    parser.add_argument("--model", "-model", help="Model for Imagenet", type=str, default="vgg16")
+    args = parser.parse_args()
+    assert args.d in ["mnist", "cifar", 'imagenet'], "Dataset should be either 'mnist' or 'cifar'"
+    print(args)
+
+    evaluation(args)
+

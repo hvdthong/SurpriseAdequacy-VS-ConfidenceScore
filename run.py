@@ -233,16 +233,16 @@ if __name__ == "__main__":
 
     if args.d == 'imagenet':
         args.num_classes = 1000
-        print('Loading IMAGENET dataset -----------------------------')
+        print('Loading training IMAGENET dataset -----------------------------')
         path_img_train = '../datasets/ilsvrc2012/images/train/'
         path_train_info = '../datasets/ilsvrc2012/images/train.txt'
         x_train, y_train = load_imagenet_random_train(path_img=path_img_train, path_info=path_train_info, args=args)
 
+        print('Loading validation IMAGENET dataset -----------------------------')
         path_img_val = '../datasets/ilsvrc2012/images/val/'
         path_val_info = '../datasets/ilsvrc2012/images/val.txt'        
         x_test, y_test = load_imagenet_val(path_img=path_img_val, path_info=path_val_info, args=args)                
         print('Finish: Loading IMAGENET dataset -----------------------------')
-        exit()
 
     if args.d == "mnist":
         (x_train, y_train), (x_test, y_test) = mnist.load_data()
@@ -290,6 +290,11 @@ if __name__ == "__main__":
             y_pred = model.predict(x_test)
             test_conf = list(np.amax(y_pred, axis=1))
             write_file(path_file='./metrics/{}_conf_{}.txt'.format(args.d, args.model), data=test_conf)
+            
+            y_pred = np.argmax(y_pred, axis=1).tolist()
+            y_test = list(y_test)
+            correct = len([p for p, l in zip(y_pred, y_test) if p == l])
+            print('Accuracy of the IMAGENET dataset using model %s: %.4f' % (args.model, correct / len(label)))
 
     if args.true_label:
         if args.d == 'mnist' or args.d == 'cifar':

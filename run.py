@@ -273,13 +273,21 @@ if __name__ == "__main__":
         x_test = (x_test / 255.0) - (1.0 - CLIP_MAX)
 
 
-    if args.lsa:            
-        test_lsa = fetch_lsa(model, x_train, x_test, "test", [args.layer], args)
-        write_file(path_file='./metrics/{}_lsa_{}.txt'.format(args.d, args.layer), data=test_lsa)
+    if args.lsa:
+        if args.d == 'mnist' or args.d == 'cifar':
+            test_lsa = fetch_lsa(model, x_train, x_test, "test", [args.layer], args)
+            write_file(path_file='./metrics/{}_lsa_{}.txt'.format(args.d, args.layer), data=test_lsa)
+        elif args.d == 'imagenet':
+            test_lsa = fetch_lsa(model, x_train, x_test, "test", [args.layer], args)
+            write_file(path_file='./metrics/{}_lsa_{}_{}.txt'.format(args.d, args.model, args.layer), data=test_lsa)
 
     if args.dsa:
-        test_dsa = fetch_dsa(model, x_train, x_test, "test", [args.layer], args)
-        write_file(path_file='./metrics/{}_dsa_{}.txt'.format(args.d, args.layer), data=test_dsa)
+        if args.d == 'mnist' or args.d == 'cifar':
+            test_dsa = fetch_dsa(model, x_train, x_test, "test", [args.layer], args)
+            write_file(path_file='./metrics/{}_dsa_{}.txt'.format(args.d, args.layer), data=test_dsa)
+        elif args.d == 'imagenet':
+            test_dsa = fetch_dsa(model, x_train, x_test, "test", [args.layer], args)
+            write_file(path_file='./metrics/{}_dsa_{}_{}.txt'.format(args.d, args.model, args.layer), data=test_dsa)
 
     if args.conf:
         if args.d == 'mnist' or args.d == 'cifar':
@@ -291,10 +299,10 @@ if __name__ == "__main__":
             test_conf = list(np.amax(y_pred, axis=1))
             write_file(path_file='./metrics/{}_conf_{}.txt'.format(args.d, args.model), data=test_conf)
             
-            y_pred = np.argmax(y_pred, axis=1).tolist()
-            y_test = list(y_test)
-            correct = len([p for p, l in zip(y_pred, y_test) if p == l])
-            print('Accuracy of the IMAGENET dataset using model %s: %.4f' % (args.model, correct / len(label)))
+            # y_pred = np.argmax(y_pred, axis=1).tolist()
+            # y_test = list(y_test)
+            # correct = len([p for p, l in zip(y_pred, y_test) if p == l])
+            # print('Accuracy of the IMAGENET dataset using model %s: %.4f' % (args.model, correct / len(y_pred)))
 
     if args.true_label:
         if args.d == 'mnist' or args.d == 'cifar':

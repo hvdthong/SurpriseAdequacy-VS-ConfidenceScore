@@ -12,8 +12,9 @@ import random
 import pickle
 
 from keras.applications.vgg16 import VGG16
+from keras.applications.densenet import DenseNet201
 from keras.preprocessing import image
-from keras.applications.vgg16 import preprocess_input
+
 
 random.seed(0)
 
@@ -35,7 +36,7 @@ def load_header_imagenet(data):
         label.append(int(d.strip().split()[1].strip()))
     return img_name, label
 
-def load_img_imagenet(img_path):
+def load_img_imagenet(img_path, args):
     """Process the image of ImageNet data
     
     Args:
@@ -46,6 +47,10 @@ def load_img_imagenet(img_path):
     img = image.load_img(img_path, target_size=(224, 224))
     x = image.img_to_array(img)
     x = np.expand_dims(x, axis=0)
+    if args.model == 'vgg16':
+        from keras.applications.vgg16 import preprocess_input        
+    elif args.model == 'densenet201':
+        from keras.applications.densenet import preprocess_input
     x = preprocess_input(x)
     return x
 
@@ -86,30 +91,30 @@ def load_imagenet_random_train(path_img, path_info, args):
     name_folders = list(sorted(set(name_folders)))        
     
     if args.random_train == True:        
-        for i, n in enumerate(name_folders):
-            random_name_file = sorted(random.sample(os.listdir(path_img + n), args.random_train_size))
-            process_folder = numpy_append_advance([load_img_imagenet(path_img + n + '/' + r) for r in random_name_file])
-            label_folder = get_label_imagenet(name_folder=n, imagnet_info=imgnet_info)
-            label_folder = np.array([label_folder for i in range(args.random_train_size)])           
-            print('Processing folder %i with have name: %s' % (i, n))
-            pickle.dump((process_folder, label_folder), open('./dataset/imagenet/%i_%s.p' % (i, n), 'wb'))
+        # for i, n in enumerate(name_folders):
+        #     random_name_file = sorted(random.sample(os.listdir(path_img + n), args.random_train_size))
+        #     process_folder = numpy_append_advance([load_img_imagenet(path_img + n + '/' + r, args) for r in random_name_file])
+        #     label_folder = get_label_imagenet(name_folder=n, imagnet_info=imgnet_info)
+        #     label_folder = np.array([label_folder for i in range(args.random_train_size)])           
+        #     print('Processing folder %i with have name: %s' % (i, n))
+        #     pickle.dump((process_folder, label_folder), open('./dataset/imagenet/%s_%i_%s_.p' % (args.model, i, n), 'wb'))
         print('--------------------------------------------------')
-        print('We finish processing the IMAGENET dataset')     
+        print('We finish processing the IMAGENET dataset')
         print('--------------------------------------------------')
         
         path_file = './dataset/imagenet/'
         x_random_train, y_random_train = list(), list()
         for i, n in enumerate(name_folders):
-            x, y = pickle.load(open(path_file + str(i) + '_' + str(n) + '.p', 'rb'))
+            x, y = pickle.load(open(path_file + args.model + '_' + str(i) + '_' + str(n) + '_.p', 'rb'))            
             x_random_train.append(x)
-            y_random_train.append(y)            
-        x_random_train = np.concatenate(x_random_train)
-        y_random_train = np.concatenate(y_random_train)
-        pickle.dump((x_random_train, y_random_train), open('./dataset/imagenet_train.p', 'wb'), protocol=4)
+            y_random_train.append(y)     
+        x_random_train = np.concatenate(x_random_train, axis=0)
+        y_random_train = np.concatenate(y_random_train, axis=0)
+        pickle.dump((x_random_train, y_random_train), open('./dataset/imagenet_train_%s.p' % (args.model), 'wb'), protocol=4)
         return x_random_train, y_random_train
 
     else:
-        path_file = './dataset/imagenet_train.p'
+        path_file = './dataset/imagenet_train_%s.p' % (args.model)
         x, y = pickle.load(open(path_file, 'rb'))
         return x, y
         
@@ -118,13 +123,13 @@ def load_imagenet_val(path_img, path_info, args):
         img_name, img_label = load_header_imagenet(load_file(path_val_info))
         x, y = list(), list()
         for n, l in zip(img_name, img_label):        
-            x.append(load_img_imagenet(path_img + n))
+            x.append(load_img_imagenet(path_img + n, args))
             y.append(np.array([l]))
         x, y = np.concatenate(x), np.concatenate(y)                
-        pickle.dump((x, y), open('./dataset/imagenet_val.p', 'wb'), protocol=4)        
+        pickle.dump((x, y), open('./dataset/imagenet_val_%s.p' % (args.model), 'wb'), protocol=4)        
         return x, y
     else:
-        path_file = './dataset/imagenet_val.p'
+        path_file = './dataset/imagenet_val_%s.p' % (args.model)
         x, y = pickle.load(open(path_file, 'rb'))
         return x, y    
 
@@ -219,6 +224,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--val", "-val", help="load validation dataset (only for IMAGENET dataset)", action="store_true"
     )
+    parser.add_argument("--model", "-model", help="Model for IMAGENET dataset", type=str, default="densenet201")
     args = parser.parse_args()
     assert args.d in ["mnist", "cifar", 'imagenet'], "Dataset should be either 'mnist' or 'cifar'"
     assert args.attack in ["fgsm", "bim", 'jsma', 'c+w'], "Dataset should be either 'fgsm', 'bim', 'jsma', 'c+w'"
@@ -251,8 +257,12 @@ if __name__ == "__main__":
         model = load_model("./model/cifar_model_improvement-491-0.88.h5")
         model.summary()
     elif args.d == 'imagenet':
-        model = VGG16(weights='imagenet')
-        model.summary()
+        if args.model == 'vgg16':
+            model = VGG16(weights='imagenet')
+            model.summary()
+        elif args.model == 'densenet201':
+            model = DenseNet201(weights='imagenet')
+            model.summary()
 
 
     if args.d == 'mnist' or args.d == 'cifar':
@@ -271,9 +281,14 @@ if __name__ == "__main__":
         write_file(path_file='./metrics/{}_dsa_{}.txt'.format(args.d, args.layer), data=test_dsa)
 
     if args.conf:
-        y_pred = model.predict(x_test)
-        test_conf = list(np.amax(y_pred, axis=1))
-        write_file(path_file='./metrics/{}_conf.txt'.format(args.d), data=test_conf)
+        if args.d == 'mnist' or args.d == 'cifar':
+            y_pred = model.predict(x_test)
+            test_conf = list(np.amax(y_pred, axis=1))
+            write_file(path_file='./metrics/{}_conf.txt'.format(args.d), data=test_conf)
+        elif args.d == 'imagenet':
+            y_pred = model.predict(x_test)
+            test_conf = list(np.amax(y_pred, axis=1))
+            write_file(path_file='./metrics/{}_conf_{}.txt'.format(args.d, args.model), data=test_conf)
 
     if args.true_label:
         if args.d == 'mnist' or args.d == 'cifar':

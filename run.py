@@ -91,13 +91,13 @@ def load_imagenet_random_train(path_img, path_info, args):
     name_folders = list(sorted(set(name_folders)))        
     
     if args.random_train == True:        
-        # for i, n in enumerate(name_folders):
-        #     random_name_file = sorted(random.sample(os.listdir(path_img + n), args.random_train_size))
-        #     process_folder = numpy_append_advance([load_img_imagenet(path_img + n + '/' + r, args) for r in random_name_file])
-        #     label_folder = get_label_imagenet(name_folder=n, imagnet_info=imgnet_info)
-        #     label_folder = np.array([label_folder for i in range(args.random_train_size)])           
-        #     print('Processing folder %i with have name: %s' % (i, n))
-        #     pickle.dump((process_folder, label_folder), open('./dataset/imagenet/%s_%i_%s_.p' % (args.model, i, n), 'wb'))
+        for i, n in enumerate(name_folders):
+            random_name_file = sorted(random.sample(os.listdir(path_img + n), args.random_train_size))
+            process_folder = numpy_append_advance([load_img_imagenet(path_img + n + '/' + r, args) for r in random_name_file])
+            label_folder = get_label_imagenet(name_folder=n, imagnet_info=imgnet_info)
+            label_folder = np.array([label_folder for i in range(args.random_train_size)])           
+            print('Processing folder %i with have name: %s' % (i, n))
+            pickle.dump((process_folder, label_folder), open('./dataset/imagenet/%s_%i_%s_.p' % (args.model, i, n), 'wb'))
         print('--------------------------------------------------')
         print('We finish processing the IMAGENET dataset')
         print('--------------------------------------------------')
@@ -242,6 +242,7 @@ if __name__ == "__main__":
         path_val_info = '../datasets/ilsvrc2012/images/val.txt'        
         x_test, y_test = load_imagenet_val(path_img=path_img_val, path_info=path_val_info, args=args)                
         print('Finish: Loading IMAGENET dataset -----------------------------')
+        exit()
 
     if args.d == "mnist":
         (x_train, y_train), (x_test, y_test) = mnist.load_data()

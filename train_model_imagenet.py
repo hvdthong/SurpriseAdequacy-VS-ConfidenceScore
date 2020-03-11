@@ -8,6 +8,7 @@ from keras.applications.resnet import ResNet152
 from keras.applications.resnet_v2 import ResNet152V2
 from keras.applications.densenet import DenseNet201
 from keras.applications.inception_resnet_v2 import InceptionResNetV2
+from keras.applications.nasnet import NASNetLarge
 
 def preprocessing_imagenet(img_path, args):
     """Process the image of ImageNet data
@@ -19,6 +20,8 @@ def preprocessing_imagenet(img_path, args):
     """
     if args.model == 'inceptionresnetv2':
         img = image.load_img(img_path, target_size=(299, 299))
+    elif args.model == 'nasnetlarge':
+        img = image.load_img(img_path, target_size=(331, 331))
     else:
         img = image.load_img(img_path, target_size=(224, 224))
     x = image.img_to_array(img)
@@ -33,6 +36,8 @@ def preprocessing_imagenet(img_path, args):
         from keras.applications.densenet import preprocess_input
     elif args.model == 'inceptionresnetv2':
         from keras.applications.inception_resnet_v2 import preprocess_input
+    elif args.model == 'nasnetlarge':
+        from keras.applications.nasnet import preprocess_input
     x = preprocess_input(x)
     return x
 
@@ -55,6 +60,9 @@ def evaluation(args):
         model.summary()
     elif args.model == 'densenet201':
         model = DenseNet201(weights='imagenet')
+        model.summary()
+    elif args.model == 'nasnetlarge':
+        model = NASNetLarge(weights='imagenet')
         model.summary()
 
     name, label = load_header_imagenet(load_file(path_val_info))    

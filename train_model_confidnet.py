@@ -500,15 +500,27 @@ def train(args):
                 model.load_state_dict(torch.load('./model_confidnet/%s/train_clf/epoch_448_acc-84.45.pt' % (args.d)))
             if args.d == 'imagenet':
                 if args.model == 'densenet201':
-                    from imagenet_densenet import densenet201
+                    
                     # model = models.densenet201(pretrained=True).to(device)
-                    model = densenet201(pretrained=True)
-                    exit()
-                    print(eval_no_uncertainty(model=model, test_loader=test_loader))
-                    for param in model.named_parameters():
-                        print(param[0], param[1].requires_grad)
-                    print(type(model))
-                    exit()
+                    model_urls = {
+                        'densenet121': 'https://download.pytorch.org/models/densenet121-a639ec97.pth',
+                        'densenet169': 'https://download.pytorch.org/models/densenet169-b2777c0a.pth',
+                        'densenet201': 'https://download.pytorch.org/models/densenet201-c1103571.pth',
+                        'densenet161': 'https://download.pytorch.org/models/densenet161-8d451a50.pth',
+                    }
+                    from imagenet_densenet import densenet201
+                    import re
+                    model = densenet201(pretrained=False).to(device)
+                    from torch.utils.model_zoo import load_url as load_state_dict_from_url
+                    pattern = re.compile(r'^(.*denselayer\d+\.(?:norm|relu|conv))\.((?:[12])\.(?:weight|bias|running_mean|running_var))$')
+                    state_dict = load_state_dict_from_url(model_urls['densenet201'])
+                    for key in list(state_dict.keys()):
+                        res = pattern.match(key)
+                        if res:
+                            new_key = res.group(1) + res.group(2)
+                            state_dict[new_key] = state_dict[key]
+                            del state_dict[key]
+                    model.load_state_dict(state_dict, strict=False)                    
 
             if args.d == 'mnist' or args.d == 'cifar':
                 nb_classes = 10
@@ -516,19 +528,14 @@ def train(args):
             if args.d == 'imagenet':
                 nb_classes = 1000
 
-            model = freeze_layers(model=model, freeze_uncertainty_layers=False)
-            accuracy, roc_score = eval_uncertainty(model=model, test_loader=test_loader)            
+            model = freeze_layers(model=model, freeze_uncertainty_layers=False)                         
 
             # Loss and optimizer
             optimizer = torch.optim.Adam(model.parameters(), lr=0.00001)
             for epoch in range(args.epoch):
                 total_loss = 0
                 for i, (x, y) in enumerate(Bar(train_loader)):
-                    if args.d == 'mnist' or args.d == 'cifar':
-                        x, y = x.to(device), y.to(device, dtype=torch.long)
-                    
-                    if args.d == 'imagenet':
-                        x, y = x.to(device), y.to(device)
+                    x, y = x.to(device), y.to(device, dtype=torch.long)                        
                     
                     # Backward and optimize
                     optimizer.zero_grad()

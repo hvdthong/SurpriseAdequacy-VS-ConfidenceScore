@@ -4,7 +4,8 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.utils.checkpoint as cp
 from collections import OrderedDict
-from .utils import load_state_dict_from_url
+# from .utils import load_state_dict_from_url
+from torch.utils.model_zoo import load_url as load_state_dict_from_url
 from torch import Tensor
 from torch.jit.annotations import List
 
@@ -49,7 +50,7 @@ class _DenseLayer(nn.Module):
                 return True
         return False
 
-    @torch.jit.unused  # noqa: T484
+    # @torch.jit.unused  # noqa: T484
     def call_checkpoint_bottleneck(self, input):
         # type: (List[Tensor]) -> Tensor
         def closure(*inputs):
@@ -57,12 +58,12 @@ class _DenseLayer(nn.Module):
 
         return cp.checkpoint(closure, input)
 
-    @torch.jit._overload_method  # noqa: F811
+    # @torch.jit._overload_method  # noqa: F811
     def forward(self, input):
         # type: (List[Tensor]) -> (Tensor)
         pass
 
-    @torch.jit._overload_method  # noqa: F811
+    # @torch.jit._overload_method  # noqa: F811
     def forward(self, input):
         # type: (Tensor) -> (Tensor)
         pass
@@ -187,13 +188,25 @@ class DenseNet(nn.Module):
             elif isinstance(m, nn.Linear):
                 nn.init.constant_(m.bias, 0)
 
+        self.uncertainty1 = nn.Linear(num_features, 400)
+        self.uncertainty2 = nn.Linear(400, 400)
+        self.uncertainty3 = nn.Linear(400, 400)
+        self.uncertainty4 = nn.Linear(400, 400)
+        self.uncertainty5 = nn.Linear(400, 1)
+
     def forward(self, x):
         features = self.features(x)
         out = F.relu(features, inplace=True)
         out = F.adaptive_avg_pool2d(out, (1, 1))
         out = torch.flatten(out, 1)
-        out = self.classifier(out)
-        return out
+        pred = self.classifier(out)
+
+        uncertainty = F.relu(self.uncertainty1(out))
+        uncertainty = F.relu(self.uncertainty2(uncertainty))
+        uncertainty = F.relu(self.uncertainty3(uncertainty))
+        uncertainty = F.relu(self.uncertainty4(uncertainty))
+        uncertainty = self.uncertainty5(uncertainty)
+        return pred, uncertainty
 
 
 def _load_state_dict(model, model_url, progress):

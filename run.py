@@ -186,6 +186,7 @@ if __name__ == "__main__":
         help="Variance threshold",
         type=int,
         default=1e-5,
+        # default=1e-10,
     )
     parser.add_argument(
         "--upper_bound", "-upper_bound", help="Upper bound", type=int, default=2000

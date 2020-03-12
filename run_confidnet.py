@@ -131,6 +131,9 @@ if __name__ == '__main__':
     parser.add_argument(
         "--batch_size", "-batch_size", help="Batch size", type=int, default=64
     )
+    parser.add_argument(
+        "--model", "-model", help="Model for IMAGENET dataset", type=str, default='vgg16'
+    )
     args = parser.parse_args()
     assert args.d in ["mnist", "cifar", 'imagenet'], "Dataset should be either 'mnist' or 'cifar' or 'imagenet'"
     print(args)
@@ -191,7 +194,7 @@ if __name__ == '__main__':
                 write_file(path_file='./metrics/{}_confidnet_score.txt'.format(args.d), data=score)
                 write_file(path_file='./metrics/{}_confidnet_accurate.txt'.format(args.d), data=accurate)
         
-        if args.d == 'imagenet':            
+        if args.d == 'imagenet':      
             # model = VGG().to(device)
             # model.load_state_dict(torch.load(models.vgg16(pretrained=True)))
             # print(type(model))
@@ -201,7 +204,7 @@ if __name__ == '__main__':
 
             # for param in model.named_parameters():
             #     print(param[0], param[1].requires_grad)
-
+            
             model = models.vgg16(pretrained=True)
 
             for param in model.named_parameters():

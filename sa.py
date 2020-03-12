@@ -109,9 +109,9 @@ def get_ats(
                 ats = np.append(ats, layer_matrix, axis=1)
                 layer_matrix = None
 
-    # if save_path is not None:
-    #     np.save(save_path[0], ats)
-    #     np.save(save_path[1], pred)
+    if save_path is not None:
+        np.save(save_path[0], ats)
+        np.save(save_path[1], pred)
 
     return ats, pred
 
@@ -150,69 +150,69 @@ def _get_train_target_ats(model, x_train, x_target, target_name, layer_names, ar
         target_pred (list): pred of target set.
     """
 
-    # saved_train_path = _get_saved_path(args.save_path, args.d, "train", layer_names)
-    # if os.path.exists(saved_train_path[0]):
-    #     print(infog("Found saved {} ATs, skip serving".format("train")))
-    #     # In case train_ats is stored in a disk
-    #     train_ats = np.load(saved_train_path[0])
-    #     train_pred = np.load(saved_train_path[1])
-    # else:
-    #     train_ats, train_pred = get_ats(
-    #         model,
-    #         x_train,
-    #         "train",
-    #         layer_names,
-    #         num_classes=args.num_classes,
-    #         is_classification=args.is_classification,
-    #         save_path=saved_train_path,
-    #     )
-    #     print(infog("train ATs is saved at " + saved_train_path[0]))
-
-    # saved_target_path = _get_saved_path(
-    #     args.save_path, args.d, target_name, layer_names
-    # )
-    # if os.path.exists(saved_target_path[0]):
-    #     print(infog("Found saved {} ATs, skip serving").format(target_name))
-    #     # In case target_ats is stored in a disk
-    #     target_ats = np.load(saved_target_path[0])
-    #     target_pred = np.load(saved_target_path[1])
-    # else:
-    #     target_ats, target_pred = get_ats(
-    #         model,
-    #         x_target,
-    #         target_name,
-    #         layer_names,
-    #         num_classes=args.num_classes,
-    #         is_classification=args.is_classification,
-    #         save_path=saved_target_path,
-    #     )
-    #     print(infog(target_name + " ATs is saved at " + saved_target_path[0]))
-
     saved_train_path = _get_saved_path(args.save_path, args.d, "train", layer_names)
+    if os.path.exists(saved_train_path[0]):
+        print(infog("Found saved {} ATs, skip serving".format("train")))
+        # In case train_ats is stored in a disk
+        train_ats = np.load(saved_train_path[0])
+        train_pred = np.load(saved_train_path[1])
+    else:
+        train_ats, train_pred = get_ats(
+            model,
+            x_train,
+            "train",
+            layer_names,
+            num_classes=args.num_classes,
+            is_classification=args.is_classification,
+            save_path=saved_train_path,
+        )
+        print(infog("train ATs is saved at " + saved_train_path[0]))
+
     saved_target_path = _get_saved_path(
         args.save_path, args.d, target_name, layer_names
     )
-    train_ats, train_pred = get_ats(
-        model,
-        x_train,
-        "train",
-        layer_names,
-        num_classes=args.num_classes,
-        is_classification=args.is_classification,
-        save_path=saved_train_path,
-    )
-    print(infog("train ATs is saved at " + saved_train_path[0]))
+    if os.path.exists(saved_target_path[0]):
+        print(infog("Found saved {} ATs, skip serving").format(target_name))
+        # In case target_ats is stored in a disk
+        target_ats = np.load(saved_target_path[0])
+        target_pred = np.load(saved_target_path[1])
+    else:
+        target_ats, target_pred = get_ats(
+            model,
+            x_target,
+            target_name,
+            layer_names,
+            num_classes=args.num_classes,
+            is_classification=args.is_classification,
+            save_path=saved_target_path,
+        )
+        print(infog(target_name + " ATs is saved at " + saved_target_path[0]))
 
-    target_ats, target_pred = get_ats(
-        model,
-        x_target,
-        target_name,
-        layer_names,
-        num_classes=args.num_classes,
-        is_classification=args.is_classification,
-        save_path=saved_target_path,
-    )
-    print(infog(target_name + " ATs is saved at " + saved_target_path[0]))
+    # saved_train_path = _get_saved_path(args.save_path, args.d, "train", layer_names)
+    # saved_target_path = _get_saved_path(
+    #     args.save_path, args.d, target_name, layer_names
+    # )
+    # train_ats, train_pred = get_ats(
+    #     model,
+    #     x_train,
+    #     "train",
+    #     layer_names,
+    #     num_classes=args.num_classes,
+    #     is_classification=args.is_classification,
+    #     save_path=saved_train_path,
+    # )
+    # print(infog("train ATs is saved at " + saved_train_path[0]))
+
+    # target_ats, target_pred = get_ats(
+    #     model,
+    #     x_target,
+    #     target_name,
+    #     layer_names,
+    #     num_classes=args.num_classes,
+    #     is_classification=args.is_classification,
+    #     save_path=saved_target_path,
+    # )
+    # print(infog(target_name + " ATs is saved at " + saved_target_path[0]))
 
     return train_ats, train_pred, target_ats, target_pred
 
@@ -279,12 +279,15 @@ def _get_kdes(train_ats, train_pred, class_matrix, args):
     if args.is_classification:
         for label in range(args.num_classes):
             col_vectors = np.transpose(train_ats[class_matrix[label]])
-            for i in range(col_vectors.shape[0]):
-                if (
-                    np.var(col_vectors[i]) < args.var_threshold
-                    and i not in removed_cols
-                ):
-                    removed_cols.append(i)
+            if args.d == 'imagenet' and args.model == 'densenet201':
+                continue
+            else:
+                for i in range(col_vectors.shape[0]):
+                    if (
+                        np.var(col_vectors[i]) < args.var_threshold
+                        and i not in removed_cols
+                    ):
+                        removed_cols.append(i)
 
         kdes = {}
         for label in tqdm(range(args.num_classes), desc="kde"):

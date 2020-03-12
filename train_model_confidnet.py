@@ -413,13 +413,10 @@ def train(args):
                 transforms.ToTensor(),
                 normalize,
             ]))
-        train_loader = torch.utils.data.DataLoader(
-            train_dataset, batch_size=args.batch_size, shuffle=True,
-            num_workers=2, pin_memory=True)
+        train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True, num_workers=2, pin_memory=True)
 
         test_dir = '../datasets/ilsvrc2012/images/val_loader/'    
-        normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
-                                        std=[0.229, 0.224, 0.225])
+        normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
         test_dataset = datasets.ImageFolder(
             test_dir,
             transforms.Compose([
@@ -438,7 +435,9 @@ def train(args):
             if args.d == 'cifar':
                 model = VGG16SelfConfidClassic().to(device)
             if args.d == 'imagenet':
-                model = VGG16IMAGENETSelfConfidClassic().to(device)
+                # model = VGG16IMAGENETSelfConfidClassic().to(device)
+                print('We do not train model for imagenet dataset, please choose option train_uncertainty=True')
+                exit()
 
             model = freeze_layers(model=model, freeze_uncertainty_layers=True)            
 
@@ -486,6 +485,10 @@ def train(args):
             if args.d == 'cifar':
                 model = VGG16SelfConfidClassic().to(device)
                 model.load_state_dict(torch.load('./model_confidnet/%s/train_clf/epoch_448_acc-84.45.pt' % (args.d)))
+            if args.d == 'imagenet':
+                if model == 'densenet201':
+                    print('hello')
+                    exit()
 
             if args.d == 'mnist' or args.d == 'cifar':
                 nb_classes = 10

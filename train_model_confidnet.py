@@ -14,6 +14,7 @@ import os
 from utils import convert_predict_and_true_to_binary
 import numpy as np 
 from sklearn.metrics import roc_curve, auc
+import torchvision.models as models
 
 def freeze_layers(model, freeze_uncertainty_layers=True):
     if freeze_uncertainty_layers == True:
@@ -340,6 +341,17 @@ def eval(model, test_loader):
             correct += (predicted == y).sum().item()
         return 100 * correct / total
 
+def eval_no_uncertainty(model, test_loader):
+    model.eval()  # eval mode (batchnorm uses moving mean/variance instead of mini-batch mean/variance)
+    with torch.no_grad():
+        correct, total = 0, 0    
+        for i, (x, y) in enumerate(Bar(test_loader)):
+            x, y = x.to(device), y.to(device, dtype=torch.long)         
+            outputs = model(x)
+            _, predicted = torch.max(outputs.data, 1)
+            total += y.size(0)
+            correct += (predicted == y).sum().item()
+        return 100 * correct / total
 
 def eval_uncertainty(model, test_loader):
     model.eval()  # eval mode (batchnorm uses moving mean/variance instead of mini-batch mean/variance)
@@ -419,9 +431,9 @@ def train(args):
         normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
         test_dataset = datasets.ImageFolder(
             test_dir,
-            transforms.Compose([
-                transforms.RandomResizedCrop(224),
-                transforms.RandomHorizontalFlip(),
+            transforms.Compose([       
+                transforms.Resize(256),
+                transforms.CenterCrop(224),         
                 transforms.ToTensor(),
                 normalize,
             ]))
@@ -435,9 +447,10 @@ def train(args):
             if args.d == 'cifar':
                 model = VGG16SelfConfidClassic().to(device)
             if args.d == 'imagenet':
-                # model = VGG16IMAGENETSelfConfidClassic().to(device)
-                print('We do not train model for imagenet dataset, please choose option train_uncertainty=True')
-                exit()
+                model = VGG16IMAGENETSelfConfidClassic().to(device)
+                model.load_state_dict(torch.load('./model_confidnet/%s/train_clf/epoch_20_acc-35.48.pt' % (args.d)))
+                # print('We do not train model for imagenet dataset, please choose option train_uncertainty=True')
+                # exit()
 
             model = freeze_layers(model=model, freeze_uncertainty_layers=True)            
 
@@ -486,8 +499,15 @@ def train(args):
                 model = VGG16SelfConfidClassic().to(device)
                 model.load_state_dict(torch.load('./model_confidnet/%s/train_clf/epoch_448_acc-84.45.pt' % (args.d)))
             if args.d == 'imagenet':
-                if model == 'densenet201':
-                    print('hello')
+                if args.model == 'densenet201':
+                    from imagenet_densenet import densenet201
+                    # model = models.densenet201(pretrained=True).to(device)
+                    model = densenet201(pretrained=True)
+                    exit()
+                    print(eval_no_uncertainty(model=model, test_loader=test_loader))
+                    for param in model.named_parameters():
+                        print(param[0], param[1].requires_grad)
+                    print(type(model))
                     exit()
 
             if args.d == 'mnist' or args.d == 'cifar':
@@ -548,7 +568,7 @@ if __name__ == '__main__':
         "--train_uncertainty", "-train_uncertainty", help="Train the confidnet for uncertainty model", action="store_true"
     )   
     parser.add_argument(
-        "--batch_size", "-batch_size", help="Batch size", type=int, default=64
+        "--batch_size", "-batch_size", help="Batch size", type=int, default=16
     )
     parser.add_argument(
         "--epoch", "-epoch", help="Epoch", type=int, default=500
@@ -556,6 +576,7 @@ if __name__ == '__main__':
     parser.add_argument(
         "--download", "-download", help="Download dataset", action="store_true"
     )
+    parser.add_argument("--model", "-model", help="Model for IMAGENET dataset", type=str, default='densenet201')
     args = parser.parse_args()
     assert args.d in ["mnist", "cifar", 'imagenet'], "Dataset should be either 'mnist' or 'cifar' or 'imagenet'"
     print(args)

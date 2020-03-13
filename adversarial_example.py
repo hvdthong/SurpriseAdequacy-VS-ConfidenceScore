@@ -11,6 +11,7 @@ from art.classifiers import KerasClassifier
 from art.attacks import FastGradientMethod, BasicIterativeMethod, SaliencyMapMethod, CarliniL2Method
 import numpy as np
 from run import load_imagenet_val
+from keras.applications.densenet import DenseNet201
 
 CLIP_MIN = -0.5
 CLIP_MAX = 0.5
@@ -28,6 +29,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("--d", "-d", help="Dataset", type=str, default="mnist")
     parser.add_argument("--attack", "-attack", help="Define Attack Type", type=str, default="fgsm")
+    parser.add_argument("--model", "-model", help="Model used for IMAGENET dataset", type=str, default="densenet201")
     args = parser.parse_args()
     assert args.d in ["mnist", "cifar", 'imagenet'], "Dataset should be either 'mnist' or 'cifar'"
     assert args.attack in ["fgsm", "bim-a", "bim-b", "bim", "jsma", "c+w"], "Attack we should used"
@@ -60,13 +62,14 @@ if __name__ == '__main__':
 
         path_img_val = '../datasets/ilsvrc2012/images/val/'
         path_val_info = '../datasets/ilsvrc2012/images/val.txt'        
-        x_test, y_test = load_imagenet_val(path_img=path_img_val, path_info=path_val_info, args=args)                        
+        x_test, y_test = load_imagenet_val(path_img=path_img_val, path_info=path_val_info, args=args)       
 
-        x_test = x_test.astype("float32")
-        x_test = (x_test / 255.0) - (1.0 - CLIP_MAX)
-
-        model = VGG16(weights='imagenet')
-        classifier = KerasClassifier(model=model, clip_values=(-0.5, 0.5), use_logits=False)
+        if model == 'vgg16':
+            model = VGG16(weights='imagenet')
+            classifier = KerasClassifier(model=model, clip_values=(-0.5, 0.5), use_logits=False)
+        elif model == 'densenet201':            
+            model = DenseNet201(weights='imagenet')            
+            classifier = KerasClassifier(model=model, use_logits=False)
 
 
     if args.attack == 'fgsm':

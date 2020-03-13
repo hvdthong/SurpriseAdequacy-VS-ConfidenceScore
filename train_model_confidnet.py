@@ -528,7 +528,7 @@ def train(args):
             if args.d == 'imagenet':
                 nb_classes = 1000
 
-            model = freeze_layers(model=model, freeze_uncertainty_layers=False)                         
+            model = freeze_layers(model=model, freeze_uncertainty_layers=False)             
 
             # Loss and optimizer
             optimizer = torch.optim.Adam(model.parameters(), lr=0.00001)

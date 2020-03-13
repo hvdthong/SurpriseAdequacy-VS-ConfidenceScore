@@ -62,12 +62,14 @@ if __name__ == '__main__':
 
         path_img_val = '../datasets/ilsvrc2012/images/val/'
         path_val_info = '../datasets/ilsvrc2012/images/val.txt'        
+        print('Loading validation dataset for IMAGENET----------------')
         x_test, y_test = load_imagenet_val(path_img=path_img_val, path_info=path_val_info, args=args)       
+        print('Done ----------------')
 
-        if model == 'vgg16':
+        if args.model == 'vgg16':
             model = VGG16(weights='imagenet')
             classifier = KerasClassifier(model=model, clip_values=(-0.5, 0.5), use_logits=False)
-        elif model == 'densenet201':            
+        elif args.model == 'densenet201':            
             model = DenseNet201(weights='imagenet')            
             classifier = KerasClassifier(model=model, use_logits=False)
 
@@ -88,8 +90,12 @@ if __name__ == '__main__':
         attack = CarliniL2Method(classifier=classifier, batch_size=64)
     
     # generating adversarial of the testing dataset and save it to the folder './adv'
-    x_adv = attack.generate(x=x_test)
-    np.save('./adv/{}_{}.npy'.format(args.d, args.attack), x_adv)
+    if args.d == 'mnist' or args.d == 'cifar':
+        x_adv = attack.generate(x=x_test)
+        np.save('./adv/{}_{}.npy'.format(args.d, args.attack), x_adv)
+    if args.d == 'imagenet':
+        x_adv = attack.generate(x=x_test)
+        np.save('./adv/{}_{}_{}.npy'.format(args.d, args.attack, args.model), x_adv)
 
     # accuracy of our test data
     pred = np.argmax(classifier.predict(x_test), axis=1)

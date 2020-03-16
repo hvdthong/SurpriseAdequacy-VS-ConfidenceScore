@@ -520,7 +520,7 @@ def train(args):
                             new_key = res.group(1) + res.group(2)
                             state_dict[new_key] = state_dict[key]
                             del state_dict[key]
-                    model.load_state_dict(state_dict, strict=False)                    
+                    model.load_state_dict(state_dict, strict=False) 
 
             if args.d == 'mnist' or args.d == 'cifar':
                 nb_classes = 10

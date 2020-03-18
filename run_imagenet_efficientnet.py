@@ -182,8 +182,8 @@ if __name__ == '__main__':
             model = efn.EfficientNetB0(weights='imagenet')        
         if args.model == 'efficientnetb7':
             model = efn.EfficientNetB7(weights='imagenet')    
+        
         args.image_size = model.input_shape[1]
-
         args.num_classes = 1000
         print('Loading training IMAGENET dataset -----------------------------')
         
@@ -218,3 +218,6 @@ if __name__ == '__main__':
             for i in range(0, 50):
                 x_test, y_test = pickle.load(open('./dataset/%s_%s_val_%i.p' % (args.d, args.model, i), 'rb'))                
                 write_file('./metrics/%s_%s_true_label_val_%i.txt' % (args.d, args.model, i), y_test)
+
+        if args.lsa == True:
+            print(model.summary())

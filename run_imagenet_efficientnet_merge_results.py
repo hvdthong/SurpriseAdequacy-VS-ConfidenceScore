@@ -83,4 +83,4 @@ if __name__ == '__main__':
                 conf_all += conf
                 os.remove('./metrics/%s_%s_conf_val_%i.txt' % (args.d, args.model, i))
             print(len(conf_all))
-            write_file('./metrics/%s_%s_conf.txt' % (args.d, args.model), conf)
+            write_file('./metrics/%s_%s_conf.txt' % (args.d, args.model), conf_all)

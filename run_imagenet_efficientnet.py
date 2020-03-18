@@ -1,6 +1,6 @@
 import efficientnet.keras as efn 
 import argparse
-from utils import load_file
+from utils import load_file, write_file
 from run import load_img_imagenet, get_label_imagenet, load_header_imagenet
 import os 
 import numpy as np 
@@ -198,6 +198,23 @@ if __name__ == '__main__':
             path_val_info = '../datasets/ilsvrc2012/images/val.txt'
             load_imagenet_val(path_img=path_img_val, path_info=path_val_info, args=args)
 
-        if args.conf == True:
-            print('hello')
+        if args.conf == True:            
+            for i in range(0, 50):
+                x_test, y_test = pickle.load(open('./dataset/%s_%s_val_%i.p' % (args.d, args.model, i), 'rb'))
+                y_pred = model.predict(x_test)
+                print(i, x_test.shape, y_test.shape, y_pred.shape)
+                y_pred = np.amax(y_pred, axis=1)
+                write_file('./metrics/%s_%s_conf_val_%i.txt' % (args.d, args.model, i), y_pred)                
         
+        if args.pred_label == True:
+            for i in range(0, 50):
+                x_test, y_test = pickle.load(open('./dataset/%s_%s_val_%i.p' % (args.d, args.model, i), 'rb'))
+                y_pred = model.predict(x_test)
+                print(i, x_test.shape, y_test.shape, y_pred.shape)
+                y_pred = np.argmax(y_pred, axis=1)
+                write_file('./metrics/%s_%s_pred_label_val_%i.txt' % (args.d, args.model, i), y_pred)
+
+        if args.true_label == True:
+            for i in range(0, 50):
+                x_test, y_test = pickle.load(open('./dataset/%s_%s_val_%i.p' % (args.d, args.model, i), 'rb'))                
+                write_file('./metrics/%s_%s_true_label_val_%i.txt' % (args.d, args.model, i), y_test)

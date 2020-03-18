@@ -44,15 +44,26 @@ def load_img_imagenet(img_path, args):
     Returns:        
         x (array): array of the image        
     """
-    img = image.load_img(img_path, target_size=(224, 224))
-    x = image.img_to_array(img)
-    x = np.expand_dims(x, axis=0)
-    if args.model == 'vgg16':
-        from keras.applications.vgg16 import preprocess_input        
-    elif args.model == 'densenet201':
-        from keras.applications.densenet import preprocess_input
-    x = preprocess_input(x)
-    return x
+    if args.model == 'vgg16' or args.model == 'densenet201':
+        img = image.load_img(img_path, target_size=(224, 224))
+        x = image.img_to_array(img)
+        x = np.expand_dims(x, axis=0)
+        if args.model == 'vgg16':
+            from keras.applications.vgg16 import preprocess_input        
+        elif args.model == 'densenet201':
+            from keras.applications.densenet import preprocess_input
+        x = preprocess_input(x)
+        return x
+    elif args.model == 'efficientnetb0' or args.model == 'efficientnetb7':         
+        from efficientnet.keras import center_crop_and_resize, preprocess_input       
+        from skimage.io import imread
+        image = imread(img_path)
+        image_size = args.image_size
+        x = center_crop_and_resize(image, image_size=image_size)
+        x = preprocess_input(x)
+        x = np.expand_dims(x, 0)
+        return x 
+
 
 def numpy_append_advance(data):
     """Append all the elements of a list in a numpy array
@@ -88,9 +99,9 @@ def load_imagenet_random_train(path_img, path_info, args):
     """
     imgnet_info = load_file(path_info)
     name_folders = [p.split('/')[0].strip() for p in imgnet_info]
-    name_folders = list(sorted(set(name_folders)))        
+    name_folders = list(sorted(set(name_folders)))
     
-    if args.random_train == True:        
+    if args.random_train == True:
         for i, n in enumerate(name_folders):
             random_name_file = sorted(random.sample(os.listdir(path_img + n), args.random_train_size))
             process_folder = numpy_append_advance([load_img_imagenet(path_img + n + '/' + r, args) for r in random_name_file])
@@ -120,7 +131,7 @@ def load_imagenet_random_train(path_img, path_info, args):
         
 def load_imagenet_val(path_img, path_info, args):
     if args.val == True:
-        img_name, img_label = load_header_imagenet(load_file(path_val_info))
+        img_name, img_label = load_header_imagenet(load_file(path_val_info))        
         x, y = list(), list()
         for n, l in zip(img_name, img_label):        
             x.append(load_img_imagenet(path_img + n, args))

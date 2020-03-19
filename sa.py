@@ -279,14 +279,11 @@ def _get_kdes(train_ats, train_pred, class_matrix, args):
         kdes (list): List of kdes per label if classification task.
         removed_cols (list): List of removed columns by variance threshold.
     """
-    print(train_ats.shape)
-    print(train_pred.shape)
-    exit()
     removed_cols = []
     if args.is_classification:
         for label in range(args.num_classes):
             col_vectors = np.transpose(train_ats[class_matrix[label]])
-            if args.d == 'imagenet' and args.model == 'densenet201':
+            if args.d == 'imagenet' and (args.model == 'densenet201' or args.model == 'efficientnetb7'):
                 continue
             else:
                 for i in range(col_vectors.shape[0]):
@@ -295,11 +292,15 @@ def _get_kdes(train_ats, train_pred, class_matrix, args):
                         and i not in removed_cols
                     ):
                         removed_cols.append(i)
-
+                        
+        # import pdb; pdb.set_trace()
         kdes = {}
         for label in tqdm(range(args.num_classes), desc="kde"):
             refined_ats = np.transpose(train_ats[class_matrix[label]])
-            refined_ats = np.delete(refined_ats, removed_cols, axis=0)
+            if args.d == 'imagenet' and (args.model == 'densenet201' or args.model == 'efficientnetb7'):
+                pass
+            else:
+                refined_ats = np.delete(refined_ats, removed_cols, axis=0)
 
             if refined_ats.shape[0] == 0:
                 print(
@@ -325,8 +326,11 @@ def _get_kdes(train_ats, train_pred, class_matrix, args):
     return kdes, removed_cols
 
 
-def _get_lsa(kde, at, removed_cols):
-    refined_at = np.delete(at, removed_cols, axis=0)
+def _get_lsa(kde, at, removed_cols, args):
+    if args.d == 'imagenet' and (args.model == 'densenet201' or args.model == 'efficientnetb7'):
+        refined_at = at
+    else:
+        refined_at = np.delete(at, removed_cols, axis=0)
     return np.asscalar(-kde.logpdf(np.transpose(refined_at)))
 
 
@@ -365,13 +369,38 @@ def fetch_lsa(model, x_train, x_target, target_name, layer_names, args):
         for i, at in enumerate(tqdm(target_ats)):
             label = target_pred[i]
             kde = kdes[label]
-            lsa.append(_get_lsa(kde, at, removed_cols))
+            lsa.append(_get_lsa(kde, at, removed_cols, args))
     else:
         kde = kdes[0]
         for at in tqdm(target_ats):
-            lsa.append(_get_lsa(kde, at, removed_cols))
-
+            lsa.append(_get_lsa(kde, at, removed_cols, args))
     return lsa
+
+def fetch_lsa_imagenet(model, target, kdes, removed_cols, args):
+    target_ats, target_pred = target
+
+    # class_matrix = {}
+    # if args.is_classification:
+    #     for i, label in enumerate(train_pred):
+    #         if label not in class_matrix:
+    #             class_matrix[label] = []
+    #         class_matrix[label].append(i)
+
+    # kdes, removed_cols = _get_kdes(train_ats, train_pred, class_matrix, args)
+
+    lsa = []
+    print(prefix + "Fetching LSA")
+    if args.is_classification:
+        for i, at in enumerate(tqdm(target_ats)):
+            label = target_pred[i]
+            kde = kdes[label]
+            lsa.append(_get_lsa(kde, at, removed_cols, args))
+    else:
+        kde = kdes[0]
+        for at in tqdm(target_ats):
+            lsa.append(_get_lsa(kde, at, removed_cols, args))
+    return lsa
+
 
 
 def get_sc(lower, upper, k, sa):

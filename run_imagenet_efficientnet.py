@@ -8,7 +8,8 @@ import random
 from skimage.io import imread
 import keras 
 import pickle
-from sa import fetch_lsa
+from sa import fetch_lsa_imagenet, _get_kdes
+from keras.models import Model
 
 def load_imagenet_random_train(path_img, path_info, args):
     """Load IMAGENET dataset random training for calculating DSA or LSA
@@ -24,7 +25,7 @@ def load_imagenet_random_train(path_img, path_info, args):
     name_folders = [p.split('/')[0].strip() for p in imgnet_info]
     name_folders = list(sorted(set(name_folders)))    
     
-    for m in range(args.random_train_num):
+    for m in range(10, args.random_train_num):
         random.seed(m)
         if os.path.exists('./dataset/%s_%s_random_train_%i.p' % (args.d, args.model, m)):                
             print('File exists in your directory')
@@ -75,6 +76,37 @@ def load_imagenet_val(path_img, path_info, args):
             print('Random validation %i-th' % (i))
     print('Now you can load the validation dataset')
     exit()
+
+def get_ats(model, dataset, layer_names):
+    temp_model = Model(
+        inputs=model.input,
+        outputs=[model.get_layer(layer_name).output for layer_name in layer_names],
+    )
+
+    pred = model.predict(dataset)
+    pred = np.argmax(pred, axis=1)
+
+    if len(layer_names) == 1:            
+            layer_outputs = [temp_model.predict(dataset)]
+    else:            
+        layer_outputs = temp_model.predict(dataset)    
+    ats = None
+    for layer_name, layer_output in zip(layer_names, layer_outputs):
+        print("Layer: " + layer_name)
+        if layer_output[0].ndim == 3:
+            # For convolutional layers
+            layer_matrix = np.array(
+                p.map(_aggr_output, [layer_output[i] for i in range(len(dataset))])
+            )
+        else:
+            layer_matrix = np.array(layer_output)
+
+        if ats is None:
+            ats = layer_matrix
+        else:
+            ats = np.append(ats, layer_matrix, axis=1)
+            layer_matrix = None
+    return ats, pred
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -256,23 +288,33 @@ if __name__ == '__main__':
 
         if args.lsa == True:            
             random_train_files = args.random_train_ith.split(',')                   
-            x_train, y_train = list(), list()
+            train_ats, train_pred = list(), list()
             print('Loading training IMAGENET dataset -----------------------------')
-            for f in random_train_files:
-                x, y = pickle.load(open('./dataset/%s_%s_random_train_%s.p' % (args.d, args.model, f.strip()), 'rb'))            
-                print(x.shape, y.shape)
-                x_train.append(x)
-                y_train.append(y)
-            x_train, y_train = np.concatenate(x_train, axis=0), np.concatenate(y_train, axis=0)
-            print(x_train.shape, y_train.shape)
+            for i in random_train_files:
+                x, y = pickle.load(open('./dataset/%s_%s_random_train_%i.p' % (args.d, args.model, int(i)), 'rb'))            
+                print(i, x.shape, y.shape)
+                ats, pred = get_ats(model=model, dataset=x, layer_names=[args.layer])                
+                train_ats.append(ats)
+                train_pred.append(pred)
+            train_ats, train_pred = np.concatenate(train_ats, axis=0), np.concatenate(train_pred, axis=0)
+            print(train_ats.shape, train_pred.shape)
+            train = (train_ats, train_pred)
+
+            class_matrix = {}
+            if args.is_classification:
+                for i, label in enumerate(train_pred):
+                    if label not in class_matrix:
+                        class_matrix[label] = []
+                    class_matrix[label].append(i)
+
+            kdes, removed_cols = _get_kdes(train_ats, train_pred, class_matrix, args)
 
             print('Loading validation IMAGENET dataset -----------------------------')
             for i in range(0, 50):
                 x_test, y_test = pickle.load(open('./dataset/%s_%s_val_%i.p' % (args.d, args.model, i), 'rb'))
-                print(x_test.shape, y_test.shape)
-                test_lsa = fetch_lsa(model, x_train, x_test, "test", [args.layer], args)
-                write_file('./metrics/%s_%s_lsa_random_train_%s_val_%i.txt' % (args.d, args.model, args.random_train_ith, i), test_lsa)
-                print(test_lsa)
-                print(type(test_lsa))
-                print(len(test_lsa))
+                print(i, x_test.shape, y_test.shape)
+                test_ats, test_pred = get_ats(model=model, dataset=x_test, layer_names=[args.layer])
+                test = test_ats, test_pred
+                test_lsa = fetch_lsa_imagenet(model, kdes, removed_cols, test, args)
+                write_file('./metrics/%s_%s_lsa_random_train_%s_val_%i.txt' % (args.d, args.model, args.random_train_ith, i), test_lsa)               
             

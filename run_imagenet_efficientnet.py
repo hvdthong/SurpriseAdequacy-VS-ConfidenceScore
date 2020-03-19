@@ -8,6 +8,7 @@ import random
 from skimage.io import imread
 import keras 
 import pickle
+from sa import fetch_lsa
 
 def load_imagenet_random_train(path_img, path_info, args):
     """Load IMAGENET dataset random training for calculating DSA or LSA
@@ -29,7 +30,7 @@ def load_imagenet_random_train(path_img, path_info, args):
             print('File exists in your directory')
             continue
         else:                
-            x_random_train, y_random_train = list(), list()
+            random_train_file, x_random_train, y_random_train = list(), list(), list()
             for i, n in enumerate(name_folders):
                 random_name_file = sorted(random.sample(os.listdir(path_img + n), args.random_train_size))                
                 process_folder = [load_img_imagenet(path_img + n + '/' + r, args) for r in random_name_file]
@@ -171,11 +172,45 @@ if __name__ == '__main__':
         "--val_size", "-val_size", help="Validation size used to chunk (only for IMAGENET dataset)", type=int, default=1000
     )
     parser.add_argument("--model", "-model", help="Model for IMAGENET dataset", type=str, default="densenet201")
+    parser.add_argument("--random_train_ith", "-random_train_ith", type=str, default="0, 1")
     args = parser.parse_args()
     assert args.d in ["mnist", "cifar", 'imagenet'], "Dataset should be either 'mnist' or 'cifar'"
     assert args.attack in ["fgsm", "bim", 'jsma', 'c+w'], "Dataset should be either 'fgsm', 'bim', 'jsma', 'c+w'"
     assert args.lsa ^ args.dsa ^ args.conf ^ args.true_label ^ args.pred_label ^ args.adv_lsa ^ args.adv_dsa ^ args.adv_conf, "Select either 'lsa' or 'dsa' or etc."
     print(args)
+
+    # # model = efn.EfficientNetB7(weights='imagenet')
+    # # for i in range(0, 10):
+    # #     x, y = pickle.load(open('./dataset/%s_%s_random_train_%i.p' % (args.d, args.model, i), 'rb'))
+    # #     y_pred = model.predict(x)
+    # #     y_pred = np.argmax(y_pred, axis=1)
+    # #     print(i, args.d, args.model)
+    # #     write_file('./dataset/%s_%s_random_train_pred_%i.txt' % (args.d, args.model, i), y_pred)        
+    # # exit()
+    # # pred = load_file('./metrics/imagenet_efficientnetb7_pred_label.txt')
+    # pred_0 = load_file('./dataset/imagenet_efficientnetb7_random_train_pred_0.txt')
+    # pred_1 = load_file('./dataset/imagenet_efficientnetb7_random_train_pred_1.txt')
+    # pred_2 = load_file('./dataset/imagenet_efficientnetb7_random_train_pred_2.txt')
+    # pred_3 = load_file('./dataset/imagenet_efficientnetb7_random_train_pred_3.txt')
+    # pred_4 = load_file('./dataset/imagenet_efficientnetb7_random_train_pred_4.txt')
+    # pred_5 = load_file('./dataset/imagenet_efficientnetb7_random_train_pred_5.txt')
+    # pred_6 = load_file('./dataset/imagenet_efficientnetb7_random_train_pred_6.txt')
+    # pred_7 = load_file('./dataset/imagenet_efficientnetb7_random_train_pred_7.txt')
+    # pred_8 = load_file('./dataset/imagenet_efficientnetb7_random_train_pred_8.txt')
+    # pred_9 = load_file('./dataset/imagenet_efficientnetb7_random_train_pred_9.txt')
+    # # pred_2 = pred[1974:(1974+1954)]
+    # # pred_3 = pred[(1974+1954):(1974+1954+1958)]
+    # # pred_4 = pred[(1974+1954+1958):(1974+1954+1958+1958)]
+    # # pred_5 = pred[(1974+1954+1958+1958):]
+    # # print(len(pred), len(pred_1), len(pred_2), len(pred_3), len(pred_4), len(pred_5))
+    # # print(len(pred_1) + len(pred_2) + len(pred_3) + len(pred_4) + len(pred_5))
+    # pred = set(pred_0 + pred_1 + pred_2)
+    # print(len(pred))
+    # pred = set(pred_3 + pred_4 + pred_5)
+    # print(len(pred))
+    # pred = set(pred_7 + pred_8 + pred_9)
+    # print(len(pred))
+    # exit()
 
     if args.d == 'imagenet':
         if args.model == 'efficientnetb0':
@@ -185,15 +220,15 @@ if __name__ == '__main__':
         
         args.image_size = model.input_shape[1]
         args.num_classes = 1000
-        print('Loading training IMAGENET dataset -----------------------------')
         
         if args.random_train == True:
+            print('Loading training IMAGENET dataset -----------------------------')
             path_img_train = '../datasets/ilsvrc2012/images/train/'
             path_train_info = '../datasets/ilsvrc2012/images/train.txt' 
             load_imagenet_random_train(path_img=path_img_train, path_info=path_train_info, args=args)
-        
-        print('Loading validation IMAGENET dataset -----------------------------')        
+              
         if args.val == True:
+            print('Loading validation IMAGENET dataset -----------------------------')  
             path_img_val = '../datasets/ilsvrc2012/images/val/'
             path_val_info = '../datasets/ilsvrc2012/images/val.txt'
             load_imagenet_val(path_img=path_img_val, path_info=path_val_info, args=args)
@@ -219,5 +254,25 @@ if __name__ == '__main__':
                 x_test, y_test = pickle.load(open('./dataset/%s_%s_val_%i.p' % (args.d, args.model, i), 'rb'))                
                 write_file('./metrics/%s_%s_true_label_val_%i.txt' % (args.d, args.model, i), y_test)
 
-        if args.lsa == True:
-            print(model.summary())
+        if args.lsa == True:            
+            random_train_files = args.random_train_ith.split(',')                   
+            x_train, y_train = list(), list()
+            print('Loading training IMAGENET dataset -----------------------------')
+            for f in random_train_files:
+                x, y = pickle.load(open('./dataset/%s_%s_random_train_%s.p' % (args.d, args.model, f.strip()), 'rb'))            
+                print(x.shape, y.shape)
+                x_train.append(x)
+                y_train.append(y)
+            x_train, y_train = np.concatenate(x_train, axis=0), np.concatenate(y_train, axis=0)
+            print(x_train.shape, y_train.shape)
+
+            print('Loading validation IMAGENET dataset -----------------------------')
+            for i in range(0, 50):
+                x_test, y_test = pickle.load(open('./dataset/%s_%s_val_%i.p' % (args.d, args.model, i), 'rb'))
+                print(x_test.shape, y_test.shape)
+                test_lsa = fetch_lsa(model, x_train, x_test, "test", [args.layer], args)
+                write_file('./metrics/%s_%s_lsa_random_train_%s_val_%i.txt' % (args.d, args.model, args.random_train_ith, i), test_lsa)
+                print(test_lsa)
+                print(type(test_lsa))
+                print(len(test_lsa))
+            

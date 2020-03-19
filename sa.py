@@ -79,17 +79,22 @@ def get_ats(
         
         # pred = model.predict_classes(dataset, batch_size=batch_size, verbose=1)
 
-        pred = model.predict(dataset, batch_size=batch_size, verbose=1)
+        # pred = model.predict(dataset, batch_size=batch_size, verbose=1)
+        pred = model.predict(dataset)
         pred = np.argmax(pred, axis=1)
         
         if len(layer_names) == 1:
+            # layer_outputs = [
+            #     temp_model.predict(dataset, batch_size=batch_size, verbose=1)
+            # ]
             layer_outputs = [
-                temp_model.predict(dataset, batch_size=batch_size, verbose=1)
+                temp_model.predict(dataset)
             ]
         else:
-            layer_outputs = temp_model.predict(
-                dataset, batch_size=batch_size, verbose=1
-            )
+            # layer_outputs = temp_model.predict(
+            #     dataset, batch_size=batch_size, verbose=1
+            # )
+            layer_outputs = temp_model.predict(dataset)
 
         print(prefix + "Processing ATs")
         ats = None
@@ -109,9 +114,9 @@ def get_ats(
                 ats = np.append(ats, layer_matrix, axis=1)
                 layer_matrix = None
 
-    if save_path is not None:
-        np.save(save_path[0], ats)
-        np.save(save_path[1], pred)
+    # if save_path is not None:
+    #     np.save(save_path[0], ats)
+    #     np.save(save_path[1], pred)
 
     return ats, pred
 
@@ -274,7 +279,9 @@ def _get_kdes(train_ats, train_pred, class_matrix, args):
         kdes (list): List of kdes per label if classification task.
         removed_cols (list): List of removed columns by variance threshold.
     """
-
+    print(train_ats.shape)
+    print(train_pred.shape)
+    exit()
     removed_cols = []
     if args.is_classification:
         for label in range(args.num_classes):

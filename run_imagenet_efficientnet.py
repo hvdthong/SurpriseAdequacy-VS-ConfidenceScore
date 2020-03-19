@@ -25,7 +25,7 @@ def load_imagenet_random_train(path_img, path_info, args):
     name_folders = [p.split('/')[0].strip() for p in imgnet_info]
     name_folders = list(sorted(set(name_folders)))    
     
-    for m in range(10, args.random_train_num):
+    for m in range(0, args.random_train_num):
         random.seed(m)
         if os.path.exists('./dataset/%s_%s_random_train_%i.p' % (args.d, args.model, m)):                
             print('File exists in your directory')
@@ -287,7 +287,7 @@ if __name__ == '__main__':
                 write_file('./metrics/%s_%s_true_label_val_%i.txt' % (args.d, args.model, i), y_test)
 
         if args.lsa == True:            
-            random_train_files = args.random_train_ith.split(',')                   
+            random_train_files = args.random_train_ith.split(',')
             train_ats, train_pred = list(), list()
             print('Loading training IMAGENET dataset -----------------------------')
             for i in random_train_files:
@@ -306,7 +306,6 @@ if __name__ == '__main__':
                     if label not in class_matrix:
                         class_matrix[label] = []
                     class_matrix[label].append(i)
-
             kdes, removed_cols = _get_kdes(train_ats, train_pred, class_matrix, args)
 
             print('Loading validation IMAGENET dataset -----------------------------')

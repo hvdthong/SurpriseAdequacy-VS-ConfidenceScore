@@ -318,7 +318,7 @@ if __name__ == '__main__':
             else:
                 train_ats, train_pred = list(), list()
                 print('Loading training IMAGENET dataset -----------------------------')
-                for i in range(0, 150):
+                for i in range(args.random_train_start, args_random_train_end):
                     x, y = pickle.load(open('./dataset/%s_%s_random_train_%i.p' % (args.d, args.model, int(i)), 'rb'))            
                     print(i, x.shape, y.shape)
                     ats, pred = get_ats(model=model, dataset=x, layer_names=[args.layer])                

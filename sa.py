@@ -378,31 +378,6 @@ def fetch_lsa(model, x_train, x_target, target_name, layer_names, args):
             lsa.append(_get_lsa(kde, at, removed_cols, args))
     return lsa
 
-def fetch_lsa_imagenet(model, target, kdes, removed_cols, args):
-    target_ats, target_pred = target
-
-    # class_matrix = {}
-    # if args.is_classification:
-    #     for i, label in enumerate(train_pred):
-    #         if label not in class_matrix:
-    #             class_matrix[label] = []
-    #         class_matrix[label].append(i)
-
-    # kdes, removed_cols = _get_kdes(train_ats, train_pred, class_matrix, args)
-
-    lsa = []
-    print(prefix + "Fetching LSA")
-    if args.is_classification:
-        for i, at in enumerate(tqdm(target_ats)):
-            label = target_pred[i]
-            kde = kdes[label]
-            lsa.append(_get_lsa(kde, at, removed_cols, args))
-    else:
-        kde = kdes[0]
-        for at in tqdm(target_ats):
-            lsa.append(_get_lsa(kde, at, removed_cols, args))
-    return lsa
-
 
 
 def get_sc(lower, upper, k, sa):

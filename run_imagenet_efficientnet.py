@@ -30,7 +30,6 @@ def load_imagenet_random_train(path_img, path_info, args):
         random.seed(m)
         if os.path.exists('./dataset/%s_%s_random_train_%i.p' % (args.d, args.model, m)):                
             print('File exists in your directory')
-            continue
         else:                
             random_train_file, x_random_train, y_random_train = list(), list(), list()
             for i, n in enumerate(name_folders):
@@ -44,9 +43,7 @@ def load_imagenet_random_train(path_img, path_info, args):
                     
                     x_random_train.append(process_folder)
                     y_random_train.append(label_folder)                    
-                    print('Random training %i-th of the folder %i-th which has name %s' % (m, i, n))
-                else:
-                    continue
+                    print('Random training %i-th of the folder %i-th which has name %s' % (m, i, n))                
             x_random_train = np.concatenate(x_random_train, axis=0)
             y_random_train = np.concatenate(y_random_train, axis=0)                
             pickle.dump((x_random_train, y_random_train), open('./dataset/%s_%s_random_train_%i.p' % (args.d, args.model, m), 'wb'), protocol=4)        
@@ -242,6 +239,8 @@ if __name__ == '__main__':
     parser.add_argument(
         "--random_train", "-random_train", help="random selected images for training (only for IMAGENET dataset)", action="store_true"
     )
+    parser.add_argument("--random_train_start", "-random_train_num_start", type=int, default=0)
+    parser.add_argument("--random_train_end", "-random_train_num_end", type=int, default=150)
     parser.add_argument("--random_train_size", "-random_train_size", type=int, default=1)
     parser.add_argument("--random_train_num", "-random_train_num", type=int, default=10)
     parser.add_argument("--random_train_num_start", "-random_train_num_start", type=int, default=10)
@@ -319,7 +318,7 @@ if __name__ == '__main__':
             else:
                 train_ats, train_pred = list(), list()
                 print('Loading training IMAGENET dataset -----------------------------')
-                for i in range(0, 10):
+                for i in range(0, 150):
                     x, y = pickle.load(open('./dataset/%s_%s_random_train_%i.p' % (args.d, args.model, int(i)), 'rb'))            
                     print(i, x.shape, y.shape)
                     ats, pred = get_ats(model=model, dataset=x, layer_names=[args.layer])                

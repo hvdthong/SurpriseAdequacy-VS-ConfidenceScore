@@ -325,9 +325,10 @@ if __name__ == '__main__':
                     ats, pred = get_ats(model=model, dataset=x, layer_names=[args.layer])                
                     train_ats.append(ats)
                     train_pred.append(pred)
-                train_ats, train_pred = np.concatenate(train_ats, axis=0), np.concatenate(train_pred, axis=0)
-                pickle.dump((train_ats, train_pred), open('./dataset/%s_%s_random_train_ats.p' % (args.d, args.model), 'wb'), protocol=4)
-                print(train_ats.shape, train_pred.shape)
+                    pickle.dump((ats, pred), open('./dataset/%s_%s_random_train_ats_%i.p' % (args.d, args.model, i), 'wb'), protocol=4)
+                # train_ats, train_pred = np.concatenate(train_ats, axis=0), np.concatenate(train_pred, axis=0)
+                # pickle.dump((train_ats, train_pred), open('./dataset/%s_%s_random_train_ats.p' % (args.d, args.model), 'wb'), protocol=4)
+                # print(train_ats.shape, train_pred.shape)
                 exit()              
 
             if args.lsa_kdes:

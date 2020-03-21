@@ -239,9 +239,10 @@ if __name__ == '__main__':
     parser.add_argument(
         "--random_train", "-random_train", help="random selected images for training (only for IMAGENET dataset)", action="store_true"
     )
-    parser.add_argument("--random_train_start", "-random_train_num_start", type=int, default=0)
-    parser.add_argument("--random_train_end", "-random_train_num_end", type=int, default=150)
+    parser.add_argument("--random_train_start", "-random_train_start", type=int, default=0)
+    parser.add_argument("--random_train_end", "-random_train_end", type=int, default=150)
     parser.add_argument("--random_train_size", "-random_train_size", type=int, default=1)
+
     parser.add_argument("--random_train_num", "-random_train_num", type=int, default=10)
     parser.add_argument("--random_train_num_start", "-random_train_num_start", type=int, default=10)
     parser.add_argument("--random_train_num_end", "-random_train_num_end", type=int, default=100)
@@ -318,7 +319,7 @@ if __name__ == '__main__':
             else:
                 train_ats, train_pred = list(), list()
                 print('Loading training IMAGENET dataset -----------------------------')
-                for i in range(args.random_train_start, args_random_train_end):
+                for i in range(args.random_train_start, args.random_train_end):
                     x, y = pickle.load(open('./dataset/%s_%s_random_train_%i.p' % (args.d, args.model, int(i)), 'rb'))            
                     print(i, x.shape, y.shape)
                     ats, pred = get_ats(model=model, dataset=x, layer_names=[args.layer])                

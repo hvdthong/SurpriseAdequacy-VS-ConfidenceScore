@@ -288,6 +288,7 @@ if __name__ == "__main__":
     if args.lsa:
         if args.d == 'mnist' or args.d == 'cifar':
             test_lsa = fetch_lsa(model, x_train, x_test, "test", [args.layer], args)
+            exit()
             write_file(path_file='./metrics/{}_lsa_{}.txt'.format(args.d, args.layer), data=test_lsa)
         elif args.d == 'imagenet':
             test_lsa = fetch_lsa(model, x_train, x_test, "test", [args.layer], args)

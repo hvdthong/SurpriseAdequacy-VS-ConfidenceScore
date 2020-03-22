@@ -25,13 +25,21 @@ def load_imagenet_random_train(path_img, path_info, args):
     imgnet_info = load_file(path_info)
     name_folders = [p.split('/')[0].strip() for p in imgnet_info]
     name_folders = list(sorted(set(name_folders)))    
-    
+    random_train_file = list()
     for m in range(args.random_train_num_start, args.random_train_num_end):
         random.seed(m)
+        # for i, n in enumerate(name_folders):
+        #     random_name_file = sorted(random.sample(os.listdir(path_img + n), args.random_train_size))
+        #     process_folder = [load_img_imagenet(path_img + n + '/' + r, args) for r in random_name_file]
+        #     process_folder = [p for p in process_folder if len(p.shape) == 4]
+        #     if len(process_folder) > 0:                
+        #         random_train_file += random_name_file
+        #     print(m, i)
+
         if os.path.exists('./dataset/%s_%s_random_train_%i.p' % (args.d, args.model, m)):                
             print('File exists in your directory')
         else:                
-            random_train_file, x_random_train, y_random_train = list(), list(), list()
+            x_random_train, y_random_train = list(), list()
             for i, n in enumerate(name_folders):
                 random_name_file = sorted(random.sample(os.listdir(path_img + n), args.random_train_size))                
                 process_folder = [load_img_imagenet(path_img + n + '/' + r, args) for r in random_name_file]
@@ -43,10 +51,45 @@ def load_imagenet_random_train(path_img, path_info, args):
                     
                     x_random_train.append(process_folder)
                     y_random_train.append(label_folder)                    
-                    print('Random training %i-th of the folder %i-th which has name %s' % (m, i, n))                
+                    print('Random training %i-th of the folder %i-th which has name %s' % (m, i, n))
+            
             x_random_train = np.concatenate(x_random_train, axis=0)
             y_random_train = np.concatenate(y_random_train, axis=0)                
             pickle.dump((x_random_train, y_random_train), open('./dataset/%s_%s_random_train_%i.p' % (args.d, args.model, m), 'wb'), protocol=4)        
+    write_file('./dataset/%s_%s_random_train_name_file.txt' % (args.d, args.model), random_train_file)
+    print('Now you can load the training dataset')
+    exit()
+
+def load_imagenet_random_train_ver2(path_img, path_info, args):
+    """Load IMAGENET dataset random training for calculating DSA or LSA
+    
+    Args:
+        path_img (string): Folder of train dataset
+        path_info (string): A file which includes the information of training data
+        args: Keyboards arguments
+    """
+
+    imgnet_info = load_file(path_info)
+    name_folders = [p.split('/')[0].strip() for p in imgnet_info]
+    name_folders = list(sorted(set(name_folders)))    
+    random_train_file = list()
+    random.seed(0)
+    for i, n in enumerate(name_folders):
+        random_train_file, x_random_train, y_random_train = list(), list(), list()
+
+        random_name_file = sorted(random.sample(os.listdir(path_img + n), args.random_train_size))
+        process_folder = [load_img_imagenet(path_img + n + '/' + r, args) for r in random_name_file]
+        zip_process = [(p, r) for p, r in zip(process_folder, random_name_file) if len(p.shape) == 4]
+        process_folder = [p for (p, r) in zip_process]
+        random_name_file = [r for (p, r) in zip_process]
+        if len(process_folder) > 0:
+            process_folder = np.concatenate(process_folder, axis=0)
+            label_folder = get_label_imagenet(name_folder=n, imagnet_info=imgnet_info)                
+            label_folder = np.array([label_folder for i in range(len(process_folder))])            
+
+        print(len(random_name_file), process_folder.shape, label_folder.shape)
+        print('Random training the folder %i-th which has name %s' % (i, n))
+        pickle.dump((random_name_file, process_folder, label_folder), open('./dataset_imagenet/%s_%s_random_train_%i.p' % (args.d, args.model, i), 'wb'), protocol=4)
     print('Now you can load the training dataset')
     exit()
 
@@ -118,37 +161,49 @@ def _get_kdes(train_ats, train_pred, class_matrix, args):
     Returns:
         kdes (list): List of kdes per label if classification task.
         removed_cols (list): List of removed columns by variance threshold.
-    """                     
-            
+    """
+    # import pdb; pdb.set_trace()
+    removed_cols = []
+    for label in range(args.num_classes):
+        col_vectors = np.transpose(train_ats[class_matrix[label]])
+        for i in range(col_vectors.shape[0]):
+            if (
+                np.var(col_vectors[i]) < args.var_threshold
+                and i not in removed_cols
+            ):
+                removed_cols.append(i)
+    # import pdb; pdb.set_trace()
+    # print(len(removed_cols))
+    # exit()
     for label in tqdm(range(args.num_classes), desc="kde"):
-        refined_ats = np.transpose(train_ats[class_matrix[label]])        
-        if refined_ats.shape[0] == 0:
-            print(
-                warn("ats were removed by threshold {}".format(args.var_threshold))
-            )
-            break
-        import pdb; pdb.set_trace()
+        refined_ats = np.transpose(train_ats[class_matrix[label]])     
+        refined_ats = np.delete(refined_ats, removed_cols, axis=0)   
+        # if refined_ats.shape[0] == 0:
+        #     print(
+        #         warn("ats were removed by threshold {}".format(args.var_threshold))
+        #     )
+        #     break
+        # import pdb; pdb.set_trace()
+        # refined_ats[refined_ats < 0] = 0
+        # try:
+        #     kde = gaussian_kde(refined_ats)
+        # except:
+        #     print('catch something here')
+        #     import pdb; pdb.set_trace()
         kde = gaussian_kde(refined_ats)
-        pickle.dump(kde, open('./dataset/%s_%s_random_train_kde_label_%i.p' % (args.d, args.model, label), 'wb'), protocol=4)        
-
-
-# def _get_lsa(kde, at):
-#     try:
-#         # score = np.asscalar(-kde.logpdf(np.transpose(at)))
-#         score = np.asscalar(-kde.pdf(np.transpose(at)))
-#     except:
-#         score = 0
-#     return score
+        pickle.dump((kde, removed_cols), open('./dataset_imagenet/%s_%s_random_train_ats_%s_kde_label_%i.p' % (args.d, args.model, args.layer, label), 'wb'), protocol=4)
 
 def fetch_lsa_imagenet(model, target, args):
     target_ats, target_pred = target
     lsa = []
     print("Fetching LSA")
-    import pdb; pdb.set_trace()
     for i, at in enumerate(tqdm(target_ats)):
         label = target_pred[i]
-        kde = pickle.load(open('./dataset/%s_%s_random_train_kde_label_%i.p' % (args.d, args.model, label), 'rb'))        
-        lsa.append(np.asscalar(-kde.pdf(np.transpose(at))))
+        kde, removed_cols = pickle.load(open('./dataset_imagenet/%s_%s_random_train_ats_%s_kde_label_%i.p' % (args.d, args.model, args.layer, label), 'rb'))
+        # import pdb; pdb.set_trace()
+        # -kde.logpdf(np.transpose(at))
+        at = np.delete(at, removed_cols, axis=0)
+        lsa.append(np.asscalar(-kde.logpdf(np.transpose(at))))
     return lsa
 
 
@@ -204,7 +259,9 @@ if __name__ == '__main__':
         "-var_threshold",
         help="Variance threshold",
         type=int,
-        default=1e-5,        
+        default=1e-5,
+        # default=1e-4,
+        # default=0,        
     )
     parser.add_argument(
         "--upper_bound", "-upper_bound", help="Upper bound", type=int, default=2000
@@ -239,9 +296,12 @@ if __name__ == '__main__':
     parser.add_argument(
         "--random_train", "-random_train", help="random selected images for training (only for IMAGENET dataset)", action="store_true"
     )
+    parser.add_argument(
+        "--random_train_ats", "-random_train_ats", help="Activation Trace for training IMAGENET dataset", action="store_true"
+    )
     parser.add_argument("--random_train_start", "-random_train_start", type=int, default=0)
     parser.add_argument("--random_train_end", "-random_train_end", type=int, default=150)
-    parser.add_argument("--random_train_size", "-random_train_size", type=int, default=1)
+    parser.add_argument("--random_train_size", "-random_train_size", type=int, default=100)
 
     parser.add_argument("--random_train_num", "-random_train_num", type=int, default=10)
     parser.add_argument("--random_train_num_start", "-random_train_num_start", type=int, default=10)
@@ -255,6 +315,10 @@ if __name__ == '__main__':
     parser.add_argument(
         "--val_size", "-val_size", help="Validation size used to chunk (only for IMAGENET dataset)", type=int, default=1000
     )
+
+    parser.add_argument(
+        "--val_ats", "-val_ats", help="Activation Trace for validation IMAGENET dataset", action="store_true"
+    )
     parser.add_argument(
         "--val_start", "-val_start", help="Start validation index (only for IMAGENET dataset)", type=int, default=0
     )
@@ -266,7 +330,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
     assert args.d in ["mnist", "cifar", 'imagenet'], "Dataset should be either 'mnist' or 'cifar'"
     assert args.attack in ["fgsm", "bim", 'jsma', 'c+w'], "Dataset should be either 'fgsm', 'bim', 'jsma', 'c+w'"
-    assert args.lsa ^ args.dsa ^ args.conf ^ args.true_label ^ args.pred_label ^ args.adv_lsa ^ args.adv_dsa ^ args.adv_conf, "Select either 'lsa' or 'dsa' or etc."
+    assert args.random_train ^ args.lsa ^ args.dsa ^ args.conf ^ args.true_label ^ args.pred_label ^ args.adv_lsa ^ args.adv_dsa ^ args.adv_conf, "Select either 'lsa' or 'dsa' or etc."
     print(args)
 
     if args.d == 'imagenet':
@@ -282,7 +346,8 @@ if __name__ == '__main__':
             print('Loading training IMAGENET dataset -----------------------------')
             path_img_train = '../datasets/ilsvrc2012/images/train/'
             path_train_info = '../datasets/ilsvrc2012/images/train.txt' 
-            load_imagenet_random_train(path_img=path_img_train, path_info=path_train_info, args=args)
+            # load_imagenet_random_train(path_img=path_img_train, path_info=path_train_info, args=args)
+            load_imagenet_random_train_ver2(path_img=path_img_train, path_info=path_train_info, args=args)
               
         if args.val == True:
             print('Loading validation IMAGENET dataset -----------------------------')  
@@ -311,47 +376,209 @@ if __name__ == '__main__':
                 x_test, y_test = pickle.load(open('./dataset/%s_%s_val_%i.p' % (args.d, args.model, i), 'rb'))                
                 write_file('./metrics/%s_%s_true_label_val_%i.txt' % (args.d, args.model, i), y_test)
 
-        if args.lsa == True:            
-            if os.path.exists('./dataset/%s_%s_random_train_ats.p' % (args.d, args.model)):                
-                print('File exists in your directory')
-                (train_ats, train_pred) = pickle.load(open('./dataset/%s_%s_random_train_ats.p' % (args.d, args.model), 'rb'))                  
-                print(train_ats.shape, train_pred.shape)                
-            else:
+        if args.random_train_ats:                
+                print('Loading training IMAGENET dataset to create trace activation -----------------------------')
                 train_ats, train_pred = list(), list()
-                print('Loading training IMAGENET dataset -----------------------------')
                 for i in range(args.random_train_start, args.random_train_end):
-                    x, y = pickle.load(open('./dataset/%s_%s_random_train_%i.p' % (args.d, args.model, int(i)), 'rb'))            
-                    print(i, x.shape, y.shape)
-                    ats, pred = get_ats(model=model, dataset=x, layer_names=[args.layer])                
-                    train_ats.append(ats)
-                    train_pred.append(pred)
-                    pickle.dump((ats, pred), open('./dataset/%s_%s_random_train_ats_%i.p' % (args.d, args.model, i), 'wb'), protocol=4)
-                # train_ats, train_pred = np.concatenate(train_ats, axis=0), np.concatenate(train_pred, axis=0)
-                # pickle.dump((train_ats, train_pred), open('./dataset/%s_%s_random_train_ats.p' % (args.d, args.model), 'wb'), protocol=4)
-                # print(train_ats.shape, train_pred.shape)
-                exit()              
-
-            if args.lsa_kdes:
-                class_matrix = {}
-                if args.is_classification:
-                    for i, label in enumerate(train_pred):
-                        if label not in class_matrix:
-                            class_matrix[label] = []
-                        class_matrix[label].append(i)
-                _get_kdes(train_ats, train_pred, class_matrix, args)
+                    if os.path.exists('./dataset_imagenet/%s_%s_random_train_ats_%s_%i.p' % (args.d, args.model, args.layer, i)):
+                        ats, pred = pickle.load(open('./dataset_imagenet/%s_%s_random_train_ats_%s_%i.p' % (args.d, args.model, args.layer, i), 'rb'))
+                        train_ats.append(ats)
+                        train_pred.append(pred)
+                        print(i, ats.shape, pred.shape)
+                    else:
+                        _, x, y = pickle.load(open('./dataset_imagenet/%s_%s_random_train_%i.p' % (args.d, args.model, int(i)), 'rb'))                                
+                        ats, pred = get_ats(model=model, dataset=x, layer_names=[args.layer])    
+                        print(i, x.shape, y.shape, ats.shape, pred.shape)
+                        train_ats.append(ats)
+                        train_pred.append(pred)
+                        pickle.dump((ats, pred), open('./dataset_imagenet/%s_%s_random_train_ats_%s_%i.p' % (args.d, args.model, args.layer, i), 'wb'), protocol=4)
+                train_ats, train_pred = np.concatenate(train_ats, axis=0), np.concatenate(train_pred, axis=0)
+                pickle.dump((train_ats, train_pred), open('./dataset_imagenet/%s_%s_random_train_ats_%s.p' % (args.d, args.model, args.layer), 'wb'), protocol=4)
+                print(train_ats.shape, train_pred.shape)
                 exit()
 
-            print('Loading validation IMAGENET dataset -----------------------------')
+        if args.val_ats:                
+            print('Loading validation IMAGENET dataset to create trace activation -----------------------------')
+            test_ats, test_pred = list(), list()
             for i in range(args.val_start, args.val_end):
-                x_test, y_test = pickle.load(open('./dataset/%s_%s_val_%i.p' % (args.d, args.model, i), 'rb'))
-                if os.path.exists('./dataset/%s_%s_val_ats_%i.p' % (args.d, args.model, i)):                
-                    print('File exists in your directory')
-                    (test_ats, test_pred) = pickle.load(open('./dataset/%s_%s_val_ats_%i.p' % (args.d, args.model, i), 'rb'))                    
+                if os.path.exists('./dataset_imagenet/%s_%s_val_ats_%s_%i.p' % (args.d, args.model, args.layer, i)):
+                    ats, pred = pickle.load(open('./dataset_imagenet/%s_%s_val_ats_%s_%i.p' % (args.d, args.model, args.layer, i), 'rb'))
+                    test_ats.append(ats)
+                    test_pred.append(pred)
+                    print(i, ats.shape, pred.shape)
                 else:
-                    test_ats, test_pred = get_ats(model=model, dataset=x_test, layer_names=[args.layer])
-                    pickle.dump((test_ats, test_pred), open('./dataset/%s_%s_val_ats_%i.p' % (args.d, args.model, i), 'wb'), protocol=4)
+                    x, y = pickle.load(open('./dataset_imagenet/%s_%s_val_%i.p' % (args.d, args.model, int(i)), 'rb'))                                
+                    ats, pred = get_ats(model=model, dataset=x, layer_names=[args.layer])
+                    print(i, x.shape, y.shape, ats.shape, pred.shape)
+                    test_ats.append(ats)
+                    test_pred.append(pred)
+                    pickle.dump((ats, pred), open('./dataset_imagenet/%s_%s_val_ats_%s_%i.p' % (args.d, args.model, args.layer, i), 'wb'), protocol=4)
+            test_ats, test_pred = np.concatenate(test_ats, axis=0), np.concatenate(test_pred, axis=0)
+            pickle.dump((test_ats, test_pred), open('./dataset_imagenet/%s_%s_val_ats_%s.p' % (args.d, args.model, args.layer), 'wb'), protocol=4)
+            print(test_ats.shape, test_pred.shape)
+            exit()
 
-                print(i, x_test.shape, y_test.shape)
-                test_lsa = fetch_lsa_imagenet(model=model, target=(test_ats, test_pred), args=args)
-                write_file('./metrics/%s_%s_lsa_val_%i.txt' % (args.d, args.model, i), test_lsa)
+        if args.lsa == True: 
+            if args.random_train_ats == False and args.val_ats == False:
+                if os.path.exists('./dataset_imagenet/%s_%s_random_train_ats_%s.p' % (args.d, args.model, args.layer)):
+                    print('File exists in your directory')
+                    (train_ats, train_pred) = pickle.load(open('./dataset_imagenet/%s_%s_random_train_ats_%s.p' % (args.d, args.model, args.layer), 'rb'))                  
+                    print(train_ats.shape, train_pred.shape)
+                else:
+                    print('Please load the activation trace of training IMAGENET dataset')
+                    exit()
+
+                if os.path.exists('./dataset_imagenet/%s_%s_val_ats_%s.p' % (args.d, args.model, args.layer)):
+                    print('File exists in your directory')
+                    (test_ats, test_pred) = pickle.load(open('./dataset_imagenet/%s_%s_val_ats_%s.p' % (args.d, args.model, args.layer), 'rb'))                  
+                    print(test_ats.shape, test_pred.shape)
+                else:
+                    print('Please load the activation trace of validation IMAGENET dataset')
+                    exit()
+                
+                from sklearn.decomposition import PCA  # using PCA to reduce the dimensions
+                pca = PCA(n_components=10)
+                pca.fit(train_ats)
+                train_ats = pca.transform(train_ats)
+                test_ats = pca.transform(test_ats)                
+
+                class_matrix = {}
+                # import pdb; pdb.set_trace()
+                for i, label in enumerate(train_pred):
+                    if label not in class_matrix:
+                        class_matrix[label] = []
+                    class_matrix[label].append(i)
+
+                kdes = {}
+                for label in tqdm(range(args.num_classes), desc="kde"):
+                    refined_ats = np.transpose(train_ats[class_matrix[label]])
+                    kdes[label] = gaussian_kde(refined_ats)
+                
+                test_lsa = []
+                print("Fetching LSA")
+                for i, at in enumerate(tqdm(test_ats)):
+                    label = test_pred[i]
+                    test_lsa.append(np.asscalar(-kdes[label].logpdf(np.transpose(at))))
+                write_file('./metrics/%s_%s_lsa_%s.txt' % (args.d, args.model, args.layer), test_lsa)
+                exit()
+
+        if args.dsa == True:
+            if args.random_train_ats == False and args.val_ats == False:
+                if os.path.exists('./dataset_imagenet/%s_%s_random_train_ats_%s.p' % (args.d, args.model, args.layer)):
+                    print('File exists in your directory')
+                    (train_ats, train_pred) = pickle.load(open('./dataset_imagenet/%s_%s_random_train_ats_%s.p' % (args.d, args.model, args.layer), 'rb'))                  
+                    print(train_ats.shape, train_pred.shape)
+                else:
+                    print('Please load the activation trace of training IMAGENET dataset')
+                    exit()
+
+                if os.path.exists('./dataset_imagenet/%s_%s_val_ats_%s.p' % (args.d, args.model, args.layer)):
+                    print('File exists in your directory')
+                    (test_ats, test_pred) = pickle.load(open('./dataset_imagenet/%s_%s_val_ats_%s.p' % (args.d, args.model, args.layer), 'rb'))                  
+                    print(test_ats.shape, test_pred.shape)
+                else:
+                    print('Please load the activation trace of validation IMAGENET dataset')
+                    exit()
+                
+                from sklearn.decomposition import PCA  # using PCA to reduce the dimensions
+                pca = PCA(n_components=100)
+                pca.fit(train_ats)
+                train_ats = pca.transform(train_ats)
+                test_ats = pca.transform(test_ats)
+                print(train_ats.shape, test_ats.shape)
+
+                class_matrix = {}
+                all_idx = []
+                for i, label in enumerate(train_pred):
+                    if label not in class_matrix:
+                        class_matrix[label] = []
+                    class_matrix[label].append(i)
+                    all_idx.append(i)
+
+                from sa import find_closest_at
+                dsa = []
+                print("Fetching DSA")
+                for i, at in enumerate(tqdm(test_ats)):
+                    label = test_pred[i]
+                    a_dist, a_dot = find_closest_at(at, train_ats[class_matrix[label]])
+                    b_dist, _ = find_closest_at(
+                        a_dot, train_ats[list(set(all_idx) - set(class_matrix[label]))]
+                    )
+                    dsa.append(a_dist / b_dist)
+                write_file('./metrics/%s_%s_dsa_%s.txt' % (args.d, args.model, args.layer), dsa)
+                exit()
+
+
+            # if args.lsa_kdes:
+            #     if os.path.exists('./dataset_imagenet/%s_%s_random_train_ats_%s.p' % (args.d, args.model, args.layer)):
+            #         print('File exists in your directory')
+            #         (train_ats, train_pred) = pickle.load(open('./dataset_imagenet/%s_%s_random_train_ats_%s.p' % (args.d, args.model, args.layer), 'rb'))                  
+            #         print(train_ats.shape, train_pred.shape)
+            #     else:
+            #         train_ats, train_pred = list(), list()
+            #         print('Loading trace activation in training IMAGENET dataset -----------------------------')
+            #         for i in range(args.random_train_start, args.random_train_end):
+            #             ats, pred = pickle.load(open('./dataset_imagenet/%s_%s_random_train_ats_%s_%i.p' % (args.d, args.model, args.layer, int(i)), 'rb')) 
+            #             print(i, ats.shape, pred.shape)
+            #             train_ats.append(ats)
+            #             train_pred.append(pred)
+            #         train_ats, train_pred = np.concatenate(train_ats, axis=0), np.concatenate(train_pred, axis=0)
+            #         pickle.dump((train_ats, train_pred), open('./dataset_imagenet/%s_%s_random_train_ats_%s.p' % (args.d, args.model, args.layer), 'wb'), protocol=4)
+            #         print(train_ats.shape, train_pred.shape)
+            #         exit()
+                
+            #     from sklearn.decomposition import PCA
+            #     pca = PCA(n_components=2)
+            #     pca.fit(train_ats)
+            #     train_ats = pca.transform(train_ats)
+            #     print(train_ats.shape)
+
+            #     class_matrix = {}
+            #     # import pdb; pdb.set_trace()
+            #     for i, label in enumerate(train_pred):
+            #         if label not in class_matrix:
+            #             class_matrix[label] = []
+            #         class_matrix[label].append(i)
+
+            #     kdes = {}
+            #     for label in tqdm(range(args.num_classes), desc="kde"):
+            #         refined_ats = np.transpose(train_ats[class_matrix[label]])
+            #         kdes[label] = gaussian_kde(refined_ats)
+            #         print('kdes_label', label)
+
+            #     for i in range(args.val_start, args.val_end):
+            #         (test_ats, test_pred) = pickle.load(open('./dataset/%s_%s_val_ats_%s_%i.p' % (args.d, args.model, args.layer, i), 'rb')) 
+            #         test_ats = pca.transform(test_ats)
+            #         lsa = []
+            #         print("Fetching LSA")
+            #         for i, at in enumerate(tqdm(test_ats)):
+            #             label = test_pred[i]
+            #             # kde, removed_cols = pickle.load(open('./dataset_imagenet/%s_%s_random_train_ats_%s_kde_label_%i.p' % (args.d, args.model, args.layer, label), 'rb'))
+            #             import pdb; pdb.set_trace()
+            #             # # -kde.logpdf(np.transpose(at))
+            #             # at = np.delete(at, removed_cols, axis=0)
+            #             lsa.append(np.asscalar(-kdes[label].logpdf(np.transpose(at))))
+            #     exit()
+
+            #     class_matrix = {}
+            #     # import pdb; pdb.set_trace()
+            #     for i, label in enumerate(train_pred):
+            #         if label not in class_matrix:
+            #             class_matrix[label] = []
+            #         class_matrix[label].append(i)
+            #     _get_kdes(train_ats, train_pred, class_matrix, args)
+            #     exit()
+
+            # print('Loading validation IMAGENET dataset -----------------------------')
+            # for i in range(args.val_start, args.val_end):
+            #     if os.path.exists('./dataset/%s_%s_val_ats_%s_%i.p' % (args.d, args.model, args.layer, i)):                
+            #         print('File exists in your directory')
+            #         (test_ats, test_pred) = pickle.load(open('./dataset/%s_%s_val_ats_%s_%i.p' % (args.d, args.model, args.layer, i), 'rb'))                    
+            #     else:
+            #         x_test, y_test = pickle.load(open('./dataset/%s_%s_val_%i.p' % (args.d, args.model, i), 'rb'))
+            #         test_ats, test_pred = get_ats(model=model, dataset=x_test, layer_names=[args.layer])
+            #         pickle.dump((test_ats, test_pred), open('./dataset/%s_%s_val_ats_%s_%i.p' % (args.d, args.model, args.layer, i), 'wb'), protocol=4)
+            #     print(i, test_ats.shape, test_pred.shape)
+            #     test_lsa = fetch_lsa_imagenet(model=model, target=(test_ats, test_pred), args=args)
+            #     write_file('./metrics/%s_%s_lsa_val_%s_%i.txt' % (args.d, args.model, args.layer, i), test_lsa)
             

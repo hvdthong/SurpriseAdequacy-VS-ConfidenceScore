@@ -11,9 +11,10 @@ if __name__ == '__main__':
     assert args.d in ["mnist", "cifar", 'imagenet'], "Dataset should be either 'mnist' or 'cifar'"
     print(args)
 
-    predicted = load_file('./metrics/%s_pred_label.txt' % (args.d))
-    true = load_file('./metrics/%s_true_label.txt' % (args.d))
-    confidence = convert_list_number_to_float(load_file('./metrics/%s_conf.txt' % (args.d)))
+    if args.d == 'mnist' or args.d == 'cifar':
+        predicted = load_file('./metrics/%s_pred_label.txt' % (args.d))
+        true = load_file('./metrics/%s_true_label.txt' % (args.d))
+        confidence = convert_list_number_to_float(load_file('./metrics/%s_conf.txt' % (args.d)))
 
     if args.d == 'mnist':
         lsa = convert_list_number_to_float(load_file('./metrics/%s_lsa_activation_3.txt' % (args.d)))

@@ -58,30 +58,61 @@ if __name__ == '__main__':
     # for param in model.named_parameters():
     #     print(param[0], param[1].requires_grad)
 
-    from vgg_imagenet import vgg16
+    # from vgg_imagenet import vgg16
+    # from torchvision import transforms
+
+    # transform = transforms.Compose([
+    #     transforms.Resize(256),
+    #     transforms.CenterCrop(224), 
+    #     transforms.ToTensor(),
+    #     transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]
+    # )])
+
+    # from PIL import Image
+    # path_img = '../datasets/ilsvrc2012/images/val/ILSVRC2012_val_00000001.JPEG'
+    # img = Image.open(path_img)
+    # img_t = transform(img)
+    # import torch
+    # batch_t = torch.unsqueeze(img_t, 0)
+
+    # print(img_t.shape)
+    # print(batch_t.shape)
+    # exit()
+
+    # model = vgg16(pretrained=True)
+    # for param in model.named_parameters():
+    #     print(param[0], param[1].requires_grad)
+
+    import json
+    from PIL import Image
+
+    import torch
     from torchvision import transforms
 
-    transform = transforms.Compose([
-        transforms.Resize(256),
-        transforms.CenterCrop(224), 
-        transforms.ToTensor(),
-        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]
-    )])
+    from efficientnet_pytorch import EfficientNet
+    model_name = 'efficientnet-b0'
+    image_size = EfficientNet.get_image_size(model_name) # 224
 
-    from PIL import Image
-    path_img = '../datasets/ilsvrc2012/images/val/ILSVRC2012_val_00000001.JPEG'
-    img = Image.open(path_img)
-    img_t = transform(img)
-    import torch
-    batch_t = torch.unsqueeze(img_t, 0)
 
-    print(img_t.shape)
-    print(batch_t.shape)
-    exit()
+    # Open image
+    img = Image.open('../datasets/ilsvrc2012/images/val/ILSVRC2012_val_00000001.JPEG')
+    # Preprocess image
+    tfms = transforms.Compose([transforms.Resize(image_size), transforms.CenterCrop(image_size), 
+                            transforms.ToTensor(),
+                            transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225]),])
+    img = tfms(img).unsqueeze(0)
+    print(img.shape)
+    # Classify with EfficientNet
+    model = EfficientNet.from_pretrained(model_name)
+    model.eval()
+    with torch.no_grad():
+        print('predicting')
+        logits = model(img)
+        print(type(logits))
+        print(logits.shape)
+    preds = torch.topk(logits, k=5).indices.squeeze(0)
+    print(preds) 
 
-    model = vgg16(pretrained=True)
-    for param in model.named_parameters():
-        print(param[0], param[1].requires_grad)
 
     # parser = argparse.ArgumentParser()
     # parser.add_argument(

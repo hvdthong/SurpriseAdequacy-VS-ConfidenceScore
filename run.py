@@ -69,7 +69,7 @@ def load_img_imagenet(img_path, args):
         image = imread(img_path)
         image_size = args.image_size
         x = center_crop_and_resize(image, image_size=image_size)
-        x = preprocess_input(x)
+        x = preprocess_input(x)        
         x = np.expand_dims(x, 0)
         return x
 

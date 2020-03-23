@@ -278,7 +278,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
     assert args.d in ["mnist", "cifar", 'imagenet'], "Dataset should be either 'mnist' or 'cifar'"
     assert args.attack in ["fgsm", "bim", 'jsma', 'c+w'], "Dataset should be either 'fgsm', 'bim', 'jsma', 'c+w'"
-    assert args.random_train ^ args.random_train_ats ^ args.random_train_label ^ args.val_ats ^ args.lsa ^ args.dsa ^ args.conf ^ args.true_label ^ args.pred_label ^ args.adv_lsa ^ args.adv_dsa ^ args.adv_conf, "Select either 'lsa' or 'dsa' or etc."
+    assert args.ts ^ args.random_train ^ args.random_train_ats ^ args.random_train_label ^ args.val_ats ^ args.lsa ^ args.dsa ^ args.conf ^ args.true_label ^ args.pred_label ^ args.adv_lsa ^ args.adv_dsa ^ args.adv_conf, "Select either 'lsa' or 'dsa' or etc."
     print(args)
 
     if args.d == 'imagenet':
@@ -471,7 +471,7 @@ if __name__ == '__main__':
                 exit()
 
         if args.ts == True:
-            if args.random_train_ats == False and args.val_ats == False:
+            if args.random_train_ats == False and args.val_ats == False and args.random_train_label == False:
                 if os.path.exists('./dataset_imagenet/%s_%s_random_train_ats_%s.p' % (args.d, args.model, args.layer)):
                     print('File exists in your directory')
                     (train_ats, train_pred) = pickle.load(open('./dataset_imagenet/%s_%s_random_train_ats_%s.p' % (args.d, args.model, args.layer), 'rb'))                  
@@ -491,8 +491,8 @@ if __name__ == '__main__':
                 if os.path.exists('./dataset_imagenet/%s_%s_random_train_label.txt' % (args.d, args.model)):
                     print('File exists in your directory')
                     train_label = load_file('./dataset_imagenet/%s_%s_random_train_label.txt' % (args.d, args.model))
-                    print(len(train_label))
                     train_label = np.array([int(l) for l in train_label])
+                    print(train_label.shape)
                 else:
                     print('Please load the activation trace of validation IMAGENET dataset')
                     exit()
@@ -509,7 +509,7 @@ if __name__ == '__main__':
                 trust_model.fit(train_ats, train_label)
 
                 trust_score = trust_model.get_score(test_ats, test_pred).tolist()        
-                write_file('./metrics/%s_%s_ts_%s.txt' % (args.d, args.model, args.layer), dsa)
+                write_file('./metrics/%s_%s_ts_%s.txt' % (args.d, args.model, args.layer), trust_score)
 
 
 

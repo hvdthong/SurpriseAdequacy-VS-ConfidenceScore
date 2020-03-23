@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("--d", "-d", help="Dataset", type=str, default="mnist")
+    parser.add_argument("--model", "-model", help="Use for imagenet dataset", type=str, default="efficientnetb7")
     args = parser.parse_args()
     assert args.d in ["mnist", "cifar", 'imagenet'], "Dataset should be either 'mnist' or 'cifar'"
     print(args)
@@ -15,6 +16,11 @@ if __name__ == '__main__':
         predicted = load_file('./metrics/%s_pred_label.txt' % (args.d))
         true = load_file('./metrics/%s_true_label.txt' % (args.d))
         confidence = convert_list_number_to_float(load_file('./metrics/%s_conf.txt' % (args.d)))
+
+    if args.d == 'imagenet':
+        predicted = load_file('./metrics/%s_%s_pred_label.txt' % (args.d, args.model))
+        true = load_file('./metrics/%s_%s_true_label.txt' % (args.d, args.model))
+        confidence = convert_list_number_to_float(load_file('./metrics/%s_%s_conf.txt' % (args.d, args.model)))
 
     if args.d == 'mnist':
         lsa = convert_list_number_to_float(load_file('./metrics/%s_lsa_activation_3.txt' % (args.d)))
@@ -40,9 +46,13 @@ if __name__ == '__main__':
         confidnet_score = convert_list_number_to_float(load_file('./metrics/%s_confidnet_score.txt' % (args.d)))
     
     if args.d == 'imagenet':
-        lsa = convert_list_number_to_float(load_file('./metrics/%s_lsa_fc1.txt' % (args.d)))
-        dsa = convert_list_number_to_float(load_file('./metrics/%s_dsa_fc1.txt' % (args.d)))
-        ts = convert_list_number_to_float(load_file('./metrics/%s_ts_fc1.txt' % (args.d))) 
+        # lsa = convert_list_number_to_float(load_file('./metrics/%s_lsa_fc1.txt' % (args.d)))
+        # dsa = convert_list_number_to_float(load_file('./metrics/%s_dsa_fc1.txt' % (args.d)))
+        # ts = convert_list_number_to_float(load_file('./metrics/%s_ts_fc1.txt' % (args.d))) 
+
+        lsa = convert_list_number_to_float(load_file('./metrics/%s_%s_lsa_avg_pool.txt' % (args.d, args.model)))
+        dsa = convert_list_number_to_float(load_file('./metrics/%s_%s_dsa_avg_pool.txt' % (args.d, args.model)))
+        ts = convert_list_number_to_float(load_file('./metrics/%s_%s_ts_avg_pool.txt' % (args.d, args.model)))
     
     binary_predicted_true = convert_predict_and_true_to_binary(predicted=predicted, true=true)   
 
@@ -71,7 +81,7 @@ if __name__ == '__main__':
     ################################################################################################################
 
     ################################################################################################################
-    if args.d == 'mnist' or args.d == 'cifar'  or args.d == 'imagenet':
+    if args.d == 'mnist' or args.d == 'cifar' or args.d == 'imagenet':
         fpr_ts, tpr_ts, _ = roc_curve(binary_predicted_true, ts)
         roc_auc_ts = auc(fpr_ts, tpr_ts)
     ################################################################################################################

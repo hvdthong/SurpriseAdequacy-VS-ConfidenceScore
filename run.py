@@ -63,6 +63,15 @@ def load_img_imagenet(img_path, args):
         x = preprocess_input(x)
         x = np.expand_dims(x, 0)
         return x 
+    elif args.model == 'efficientnet-b7':
+        from efficientnet.keras import center_crop_and_resize, preprocess_input       
+        from skimage.io import imread
+        image = imread(img_path)
+        image_size = args.image_size
+        x = center_crop_and_resize(image, image_size=image_size)
+        x = preprocess_input(x)
+        x = np.expand_dims(x, 0)
+        return x
 
 
 def numpy_append_advance(data):

@@ -128,6 +128,7 @@ if __name__ == '__main__':
     args.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     args.image_size = EfficientNet.get_image_size(args.model)
     print(args)
+    # exit()
 
     if args.train_clf == False and args.train_uncertainty == False:
         print('You need to input the classifier for training')

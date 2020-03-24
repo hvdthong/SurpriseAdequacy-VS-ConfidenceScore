@@ -26,16 +26,17 @@ if __name__ == '__main__':
 
     if args.d == 'imagenet':        
         print('Generate the adversarial example of dataset %s using model %s with the attack %s' % (args.d, args.model, args.attack))
+        if args.model == 'efficientnetb7':
+            model = efn.EfficientNetB7(weights='imagenet')  # only use without modifying batch size (default: 1)
+            classifier = KerasClassifier(model=model, use_logits=False)
+
         for i in range(args.val_start, args.val_end):
             x_test, y_test = pickle.load(open('./dataset_imagenet/%s_%s_val_%i.p' % (args.d, args.model, int(i)), 'rb'))
-            print(i, x_test.shape, y_test.shape)
-
-            if args.model == 'efficientnetb7':
-                model = efn.EfficientNetB7(weights='imagenet')  # only use without modifying batch size (default: 1)
-                classifier = KerasClassifier(model=model, use_logits=False)
 
             if args.attack == 'fgsm':
                 attack = FastGradientMethod(classifier=classifier, eps=0.6, eps_step=0.6)  
             print('Generating adversarial examples----------------')
+            print(i, x_test.shape, y_test.shape)
             x_adv = attack.generate(x=x_test)
+            print('Saving adversarial examples----------------')
             np.save('./adv/{}_{}_{}_val_{}.npy'.format(args.d, args.model, args.attack, i), x_adv)

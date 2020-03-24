@@ -7,6 +7,11 @@ from efficientnet_pytorch import EfficientNet
 from barbar import Bar
 import torchvision.transforms as transforms
 import torchvision.datasets as datasets    
+from train_model_confidnet import freeze_layers
+import torch.nn.functional as F
+from train_model_confidnet import one_hot_embedding
+from utils import convert_predict_and_true_to_binary
+from sklearn.metrics import roc_curve, auc
 
 def divide_chunks(data, n):
     for i in range(0, len(data), n):  
@@ -66,43 +71,107 @@ def eval_no_uncertainty(model, test_loader, args):
             correct += (predicted == y).sum().item()
         return 100 * correct / total
 
+def eval(model, test_loader, args):
+    model.eval()  # eval mode (batchnorm uses moving mean/variance instead of mini-batch mean/variance)
+    with torch.no_grad():
+        correct, total = 0, 0    
+        for i, (x, y) in enumerate(Bar(test_loader)):
+            x, y = x.to(args.device), y.to(args.device, dtype=torch.long)
+            outputs, uncertainty = model(x)
+            _, predicted = torch.max(outputs.data, 1)
+            total += y.size(0)
+            correct += (predicted == y).sum().item()
+        return 100 * correct / total
+
+def eval_uncertainty(model, test_loader, args):
+    model.eval()  # eval mode (batchnorm uses moving mean/variance instead of mini-batch mean/variance)
+    with torch.no_grad():
+        correct, total = 0, 0
+        uncertainties, pred, groundtruth = list(), list(), list()
+        for i, (x, y) in enumerate(Bar(test_loader)):   
+            x, y = x.to(args.device), y.to(args.device, dtype=torch.long)            
+            outputs, uncertainty = model(x)
+            pred.append(outputs)
+            groundtruth.append(y)
+            uncertainties.append(uncertainty)
+        pred = torch.cat(pred).cpu().detach().numpy()
+        predict_label = np.argmax(pred, axis=1)
+        groundtruth = torch.cat(groundtruth).cpu().detach().numpy()
+        uncertainties = torch.cat(uncertainties).cpu().detach().numpy().flatten()
+
+        binary_predicted_true = convert_predict_and_true_to_binary(predicted=predict_label, true=groundtruth)           
+        accuracy = sum(binary_predicted_true) / len(pred)
+
+        fpr, tpr, _ = roc_curve(binary_predicted_true, uncertainties)
+        roc_auc_conf = auc(fpr, tpr)  
+
+        return accuracy, roc_auc_conf
+
+def confid_mse_loss(input, target, args):
+    probs = F.softmax(input[0], dim=1)    
+    confidence = torch.sigmoid(input[1]).squeeze()
+
+    labels_hot = one_hot_embedding(target, args.nb_classes).to(args.device)
+    weights = torch.ones_like(target).type(torch.FloatTensor).to(args.device)
+    weights[(probs.argmax(dim=1) != target)] *= 1
+
+    # Apply optional weighting
+    loss = weights * (confidence - (probs * labels_hot).sum(dim=1)) ** 2        
+    return torch.mean(loss)
+
 def train(args):
     if args.d == 'imagenet' and args.train_uncertainty:
         train_dir = '../datasets/ilsvrc2012/images/train/'    
         test_dir = '../datasets/ilsvrc2012/images/val_loader/'    
 
         train_loader, test_loader = load_train_and_test_loader(train_dir, test_dir, args)
+        
         if args.model == 'efficientnet-b7':
-            model = EfficientNet.from_pretrained(args.model).to(args.device)
+            from efficientnet_pytorch_model.model import EfficientNet as efn
+            model = efn.from_name(args.model).to(args.device)
+            state_dict = EfficientNet.from_pretrained(args.model).to(args.device).state_dict()
+            model.load_state_dict(state_dict, strict=False)
+        
+        # model = freeze_layers(model=model, freeze_uncertainty_layers=False)  
+
+        # for param in model.named_parameters():
+        #     print(param[0], param[1].requires_grad)
+        # exit()
+        # accuracy = eval(model, test_loader, args)
+        # print('Accuracy on testing data: %.2f' % (accuracy))
+
+        model = freeze_layers(model=model, freeze_uncertainty_layers=False)
+        # for param in model.named_parameters():
+        #     print(param[0], param[1].requires_grad)
+        # exit()
+
+        # Loss and optimizer
+        optimizer = torch.optim.Adam(model.parameters(), lr=0.00001)
+        for epoch in range(args.epoch):
+            total_loss = 0
+            for i, (x, y) in enumerate(Bar(train_loader)):
+                x, y = x.to(args.device), y.to(args.device, dtype=torch.long)                        
                 
-        accuracy = eval_no_uncertainty(model, test_loader, args)
-        print('Accuracy on testing data: %.2f' % (accuracy))    
+                # Backward and optimize
+                optimizer.zero_grad()
 
-            # with torch.no_grad():    
-            #     for i, (x, y) in enumerate(Bar(test_loader)):
-            #         x, y = x.to(device), y.to(device, dtype=torch.long)
-            #         # print(x.shape, y.shape) 
-            #         y_pred = model(x)
-            #         print(y_pred.shape)
-            #         exit()
-
-        # train = load_file('./dataset_imagenet/%s_training.txt' % (args.d))
-        # train = divide_chunks(train, args.batch_size)
-
-        # val = load_file('./dataset_imagenet/%s_val.txt' % (args.d))
-        # val = divide_chunks(val, args.batch_size)
-
-        # if args.model == 'efficientnet-b7':
-        #     model = EfficientNet.from_pretrained(args.model)
-        #     model.eval()
-        # with torch.no_grad():    
-        #     for i, v in enumerate(val):                
-        #         x, y, flag = generated_batch_image(v, args)
-        #         print(x.shape)              
-        #         if flag == True:
-        #             y_pred = model(x)
-        #             print(y_pred.shape)
-        #         exit()
+                # Forward pass
+                outputs, uncertainty = model(x)                    
+                loss = confid_mse_loss((outputs, uncertainty), y, args=args)
+                loss.backward()
+                total_loss += loss
+                optimizer.step()
+                # break
+            print('Running evaluation for uncertainty')
+            accuracy, roc_score = eval_uncertainty(model=model, test_loader=test_loader, args=args)
+            print('Epoch %i / %i -- Total loss: %f -- Accuracy on testing data: %.2f -- AUC on testing data: %.2f' 
+                    % (epoch, args.epoch, total_loss, accuracy, roc_score))            
+                        
+            path_save = './model_confidnet/%s_%s/train_uncertainty/' % (args.d, args.model)
+            if not os.path.exists(path_save):
+                os.makedirs(path_save)
+            torch.save(model.state_dict(), path_save + 'epoch_%i_acc-%.2f_auc-%.2f.pt' % (epoch, accuracy, roc_score))        
+            # exit()
 
 
 if __name__ == '__main__':
@@ -118,7 +187,7 @@ if __name__ == '__main__':
         "--epoch", "-epoch", help="Epoch", type=int, default=100
     )
     parser.add_argument(
-        "--batch_size", "-batch_size", help="Batch size", type=int, default=16
+        "--batch_size", "-batch_size", help="Batch size", type=int, default=32
     )
     parser.add_argument("--model", "-model", help="Model for IMAGENET dataset", type=str, default='efficientnet-b7')
     args = parser.parse_args()
@@ -127,6 +196,8 @@ if __name__ == '__main__':
     # Device configuration
     args.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     args.image_size = EfficientNet.get_image_size(args.model)
+    if args.d == 'imagenet':
+        args.nb_classes = 1000
     print(args)
     # exit()
 

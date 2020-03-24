@@ -452,7 +452,7 @@ def train(args):
                 # print('We do not train model for imagenet dataset, please choose option train_uncertainty=True')
                 # exit()
 
-            model = freeze_layers(model=model, freeze_uncertainty_layers=True)            
+            model = freeze_layers(model=model, freeze_uncertainty_layers=True)
 
             # Loss and optimizer
             criterion = nn.CrossEntropyLoss()            

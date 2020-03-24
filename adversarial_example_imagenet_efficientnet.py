@@ -3,6 +3,7 @@ import pickle
 from art.classifiers import KerasClassifier
 from art.attacks import FastGradientMethod, BasicIterativeMethod, SaliencyMapMethod, CarliniL2Method
 import efficientnet.keras as efn 
+import numpy as np
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()

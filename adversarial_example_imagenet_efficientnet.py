@@ -35,6 +35,6 @@ if __name__ == '__main__':
 
             if args.attack == 'fgsm':
                 attack = FastGradientMethod(classifier=classifier, eps=0.6, eps_step=0.6)  
-
+            print('Generating adversarial examples----------------')
             x_adv = attack.generate(x=x_test)
             np.save('./adv/{}_{}_{}_val_%i.npy'.format(args.d, args.model, args.attack, i), x_adv)

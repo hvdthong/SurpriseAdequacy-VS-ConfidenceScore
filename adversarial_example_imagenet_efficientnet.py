@@ -16,7 +16,7 @@ if __name__ == '__main__':
         "--val_end", "-val_end", help="End validation index (only for IMAGENET dataset)", type=int, default=50
     )
     parser.add_argument(
-        "--batch_size", "-batch_size", help="Batch size", type=int, default=16
+        "--batch_size", "-batch_size", help="Batch size", type=int, default=1
     )
     args = parser.parse_args()
     assert args.d in ['imagenet'], "Dataset should be either 'mnist' or 'cifar'"

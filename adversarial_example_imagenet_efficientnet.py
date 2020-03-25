@@ -34,7 +34,9 @@ if __name__ == '__main__':
             x_test, y_test = pickle.load(open('./dataset_imagenet/%s_%s_val_%i.p' % (args.d, args.model, int(i)), 'rb'))
 
             if args.attack == 'fgsm':
-                attack = FastGradientMethod(classifier=classifier, eps=0.6, eps_step=0.6)  
+                attack = FastGradientMethod(classifier=classifier, eps=0.6, eps_step=0.6)
+            if args.attack == 'bim':
+                attack = BasicIterativeMethod(classifier=classifier, eps=0.6, max_iter=15)
             print('Generating adversarial examples----------------')
             print(i, x_test.shape, y_test.shape)
             x_adv = attack.generate(x=x_test)

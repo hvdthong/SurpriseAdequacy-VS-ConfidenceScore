@@ -205,9 +205,9 @@ class EfficientNet(nn.Module):
         x = self._dropout(x)
 
         uncertainty = F.relu(self.uncertainty1(x))
-        uncertainty = F.relu(self.uncertainty2(uncertainty))
-        uncertainty = F.relu(self.uncertainty3(uncertainty))
-        uncertainty = F.relu(self.uncertainty4(uncertainty))
+        # uncertainty = F.relu(self.uncertainty2(uncertainty))
+        # uncertainty = F.relu(self.uncertainty3(uncertainty))
+        # uncertainty = F.relu(self.uncertainty4(uncertainty))
         uncertainty = self.uncertainty5(uncertainty)    
         pred = self._fc(x)
         return pred, uncertainty

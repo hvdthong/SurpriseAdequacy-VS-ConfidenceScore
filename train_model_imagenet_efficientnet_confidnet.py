@@ -12,6 +12,7 @@ import torch.nn.functional as F
 from train_model_confidnet import one_hot_embedding
 from utils import convert_predict_and_true_to_binary
 from sklearn.metrics import roc_curve, auc
+import os 
 
 def divide_chunks(data, n):
     for i in range(0, len(data), n):  
@@ -164,8 +165,7 @@ def train(args):
                 # break
             print('Running evaluation for uncertainty')
             accuracy, roc_score = eval_uncertainty(model=model, test_loader=test_loader, args=args)
-            print('Epoch %i / %i -- Total loss: %f -- Accuracy on testing data: %.2f -- AUC on testing data: %.2f' 
-                    % (epoch, args.epoch, total_loss, accuracy, roc_score))            
+            print('Epoch %i / %i -- Total loss: %f -- Accuracy on testing data: %.2f -- AUC on testing data: %.2f' % (epoch, args.epoch, total_loss, accuracy, roc_score))            
                         
             path_save = './model_confidnet/%s_%s/train_uncertainty/' % (args.d, args.model)
             if not os.path.exists(path_save):

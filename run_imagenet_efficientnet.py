@@ -179,6 +179,9 @@ if __name__ == '__main__':
     parser.add_argument(
         "--adv_conf", "-adv_conf", help="Used Adversarial Examples for Confidence Score", action="store_true"
     )
+    parser.add_argument(
+        "--adv", "-adv", help="Used Adversarial Examples", action="store_true"
+    )
     """We have five different attacks:
         + Fast Gradient Sign Method (fgsm)
         + Basic Iterative Method (bim-a, bim-b, or bim)
@@ -263,9 +266,12 @@ if __name__ == '__main__':
     parser.add_argument(
         "--val_size", "-val_size", help="Validation size used to chunk (only for IMAGENET dataset)", type=int, default=1000
     )
-
+    
     parser.add_argument(
         "--val_ats", "-val_ats", help="Activation Trace for validation IMAGENET dataset", action="store_true"
+    )
+    parser.add_argument(
+        "--val_adv_ats", "-val_adv_ats", help="Activation Trace for adversarial examples of validation IMAGENET dataset", action="store_true"
     )
     parser.add_argument(
         "--val_start", "-val_start", help="Start validation index (only for IMAGENET dataset)", type=int, default=0
@@ -359,7 +365,6 @@ if __name__ == '__main__':
             print(len(random_label))
             write_file('./dataset_imagenet/%s_%s_random_train_label.txt' % (args.d, args.model), random_label)
         
-
         if args.val_ats:                
             print('Loading validation IMAGENET dataset to create trace activation -----------------------------')
             test_ats, test_pred = list(), list()
@@ -381,8 +386,29 @@ if __name__ == '__main__':
             print(test_ats.shape, test_pred.shape)
             exit()
 
+        if args.val_adv_ats:                
+            print('Loading validation IMAGENET dataset to create trace activation -----------------------------')
+            test_ats, test_pred = list(), list()
+            for i in range(args.val_start, args.val_end):
+                if os.path.exists('./adv/%s_%s_%s_val_ats_%s_%i.p' % (args.d, args.model, args.attack, int(i))):
+                    ats, pred = pickle.load(open('./adv/%s_%s_%s_val_ats_%s_%i.p' % (args.d, args.model, args.attack, args.layer, i), 'rb'))
+                    test_ats.append(ats)
+                    test_pred.append(pred)
+                    print(i, ats.shape, pred.shape)
+                else:
+                    x, y = pickle.load(open('./adv/%s_%s_%s_val_%i.p' % (args.d, args.model, args.attack, int(i)), 'rb'))                                
+                    ats, pred = get_ats(model=model, dataset=x, layer_names=[args.layer])
+                    print(i, x.shape, y.shape, ats.shape, pred.shape)
+                    test_ats.append(ats)
+                    test_pred.append(pred)
+                    pickle.dump((ats, pred), open('./adv/%s_%s_%s_val_ats_%s_%i.p' % (args.d, args.model, args.attack, args.layer, i), 'wb'), protocol=4)
+            test_ats, test_pred = np.concatenate(test_ats, axis=0), np.concatenate(test_pred, axis=0)
+            pickle.dump((test_ats, test_pred), open('./adv/%s_%s_%s_val_ats_%s.p' % (args.d, args.model, args.attack, args.layer), 'wb'), protocol=4)
+            print(test_ats.shape, test_pred.shape)
+            exit()
+
         if args.lsa == True: 
-            if args.random_train_ats == False and args.val_ats == False:
+            if args.random_train_ats == False and (args.val_ats == False or args.val_adv_ats == False):
                 if os.path.exists('./dataset_imagenet/%s_%s_random_train_ats_%s.p' % (args.d, args.model, args.layer)):
                     print('File exists in your directory')
                     (train_ats, train_pred) = pickle.load(open('./dataset_imagenet/%s_%s_random_train_ats_%s.p' % (args.d, args.model, args.layer), 'rb'))                  
@@ -391,13 +417,23 @@ if __name__ == '__main__':
                     print('Please load the activation trace of training IMAGENET dataset')
                     exit()
 
-                if os.path.exists('./dataset_imagenet/%s_%s_val_ats_%s.p' % (args.d, args.model, args.layer)):
-                    print('File exists in your directory')
-                    (test_ats, test_pred) = pickle.load(open('./dataset_imagenet/%s_%s_val_ats_%s.p' % (args.d, args.model, args.layer), 'rb'))                  
-                    print(test_ats.shape, test_pred.shape)
-                else:
-                    print('Please load the activation trace of validation IMAGENET dataset')
-                    exit()
+                if args.adv == False:
+                    if os.path.exists('./dataset_imagenet/%s_%s_val_ats_%s.p' % (args.d, args.model, args.layer)):
+                        print('File exists in your directory')
+                        (test_ats, test_pred) = pickle.load(open('./dataset_imagenet/%s_%s_val_ats_%s.p' % (args.d, args.model, args.layer), 'rb'))                  
+                        print(test_ats.shape, test_pred.shape)
+                    else:
+                        print('Please load the activation trace of validation IMAGENET dataset')
+                        exit()
+
+                if args.adv == True:
+                    if os.path.exists('./adv/%s_%s_%s_val_ats_%s.p' % (args.d, args.model, args.attack, args.layer)):
+                        print('File exists in your directory')
+                        (test_ats, test_pred) = pickle.load(open('./dataset_imagenet/%s_%s_%s_val_ats_%s.p' % (args.d, args.model, args.attack, args.layer), 'rb'))                  
+                        print(test_ats.shape, test_pred.shape)
+                    else:
+                        print('Please load the activation trace of validation IMAGENET dataset')
+                        exit()
                 
                 from sklearn.decomposition import PCA  # using PCA to reduce the dimensions
                 pca = PCA(n_components=10)

@@ -387,8 +387,14 @@ if __name__ == '__main__':
             exit()
 
         if args.val_adv_ats:                
-            print('Loading validation IMAGENET dataset to create trace activation -----------------------------')
+            print('Loading adversarial example from validation IMAGENET dataset to create trace activation -----------------------------')
             test_ats, test_pred = list(), list()
+
+            # import sys
+            # import importlib
+            # importlib.reload(sys)            
+            # # sys.setdefaultencoding('utf-8')
+
             for i in range(args.val_start, args.val_end):
                 if os.path.exists('./adv/%s_%s_%s_val_ats_%s_%i.p' % (args.d, args.model, args.attack, args.layer, int(i))):
                     ats, pred = pickle.load(open('./adv/%s_%s_%s_val_ats_%s_%i.p' % (args.d, args.model, args.attack, args.layer, i), 'rb'))
@@ -396,12 +402,14 @@ if __name__ == '__main__':
                     test_pred.append(pred)
                     print(i, ats.shape, pred.shape)
                 else:
-                    x, y = np.load(open('./adv/%s_%s_%s_val_%i.npy' % (args.d, args.model, args.attack, int(i)), encoding='utf-8'))                                
+                    # x, y = np.load(open('./adv/%s_%s_%s_val_%i.npy' % (args.d, args.model, args.attack, int(i))))
+                    x = pickle.load(open('./adv/%s_%s_%s_val_%i.p' % (args.d, args.model, args.attack, i), 'rb'))
                     ats, pred = get_ats(model=model, dataset=x, layer_names=[args.layer])
-                    print(i, x.shape, y.shape, ats.shape, pred.shape)
+                    print(i, x.shape, ats.shape, pred.shape)
                     test_ats.append(ats)
                     test_pred.append(pred)
                     pickle.dump((ats, pred), open('./adv/%s_%s_%s_val_ats_%s_%i.p' % (args.d, args.model, args.attack, args.layer, i), 'wb'), protocol=4)
+                    # exit()
             test_ats, test_pred = np.concatenate(test_ats, axis=0), np.concatenate(test_pred, axis=0)
             pickle.dump((test_ats, test_pred), open('./adv/%s_%s_%s_val_ats_%s.p' % (args.d, args.model, args.attack, args.layer), 'wb'), protocol=4)
             print(test_ats.shape, test_pred.shape)

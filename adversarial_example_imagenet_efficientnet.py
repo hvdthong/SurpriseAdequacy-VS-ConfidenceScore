@@ -36,7 +36,8 @@ if __name__ == '__main__':
             if args.attack == 'fgsm':
                 attack = FastGradientMethod(classifier=classifier, eps=0.6, eps_step=0.6)
             if args.attack == 'bim':
-                attack = BasicIterativeMethod(classifier=classifier, eps=0.6, max_iter=10)
+                attack = BasicIterativeMethod(classifier=classifier, eps=0.6, max_iter=7)
+
             print('Generating adversarial examples----------------')
             print(i, x_test.shape, y_test.shape)
             x_adv = attack.generate(x=x_test)

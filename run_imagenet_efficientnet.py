@@ -396,7 +396,7 @@ if __name__ == '__main__':
                     test_pred.append(pred)
                     print(i, ats.shape, pred.shape)
                 else:
-                    x, y = pickle.load(open('./adv/%s_%s_%s_val_%i.p' % (args.d, args.model, args.attack, int(i)), 'rb'))                                
+                    x, y = np.load(open('./adv/%s_%s_%s_val_%i.npy' % (args.d, args.model, args.attack, int(i))))                                
                     ats, pred = get_ats(model=model, dataset=x, layer_names=[args.layer])
                     print(i, x.shape, y.shape, ats.shape, pred.shape)
                     test_ats.append(ats)
@@ -408,7 +408,7 @@ if __name__ == '__main__':
             exit()
 
         if args.lsa == True: 
-            if args.random_train_ats == False and (args.val_ats == False or args.val_adv_ats == False):
+            if args.random_train_ats == False and args.val_ats == False and args.val_adv_ats == False:
                 if os.path.exists('./dataset_imagenet/%s_%s_random_train_ats_%s.p' % (args.d, args.model, args.layer)):
                     print('File exists in your directory')
                     (train_ats, train_pred) = pickle.load(open('./dataset_imagenet/%s_%s_random_train_ats_%s.p' % (args.d, args.model, args.layer), 'rb'))                  
@@ -429,7 +429,7 @@ if __name__ == '__main__':
                 if args.adv == True:
                     if os.path.exists('./adv/%s_%s_%s_val_ats_%s.p' % (args.d, args.model, args.attack, args.layer)):
                         print('File exists in your directory')
-                        (test_ats, test_pred) = pickle.load(open('./dataset_imagenet/%s_%s_%s_val_ats_%s.p' % (args.d, args.model, args.attack, args.layer), 'rb'))                  
+                        (test_ats, test_pred) = pickle.load(open('./adv/%s_%s_%s_val_ats_%s.p' % (args.d, args.model, args.attack, args.layer), 'rb'))                  
                         print(test_ats.shape, test_pred.shape)
                     else:
                         print('Please load the activation trace of validation IMAGENET dataset')
@@ -461,7 +461,7 @@ if __name__ == '__main__':
                 exit()
 
         if args.dsa == True:
-            if args.random_train_ats == False and args.val_ats == False:
+            if args.random_train_ats == False and args.val_ats == False and args.val_adv_ats == False:
                 if os.path.exists('./dataset_imagenet/%s_%s_random_train_ats_%s.p' % (args.d, args.model, args.layer)):
                     print('File exists in your directory')
                     (train_ats, train_pred) = pickle.load(open('./dataset_imagenet/%s_%s_random_train_ats_%s.p' % (args.d, args.model, args.layer), 'rb'))                  
@@ -470,13 +470,23 @@ if __name__ == '__main__':
                     print('Please load the activation trace of training IMAGENET dataset')
                     exit()
 
-                if os.path.exists('./dataset_imagenet/%s_%s_val_ats_%s.p' % (args.d, args.model, args.layer)):
-                    print('File exists in your directory')
-                    (test_ats, test_pred) = pickle.load(open('./dataset_imagenet/%s_%s_val_ats_%s.p' % (args.d, args.model, args.layer), 'rb'))                  
-                    print(test_ats.shape, test_pred.shape)
-                else:
-                    print('Please load the activation trace of validation IMAGENET dataset')
-                    exit()
+                if args.adv == False:
+                    if os.path.exists('./dataset_imagenet/%s_%s_val_ats_%s.p' % (args.d, args.model, args.layer)):
+                        print('File exists in your directory')
+                        (test_ats, test_pred) = pickle.load(open('./dataset_imagenet/%s_%s_val_ats_%s.p' % (args.d, args.model, args.layer), 'rb'))                  
+                        print(test_ats.shape, test_pred.shape)
+                    else:
+                        print('Please load the activation trace of validation IMAGENET dataset')
+                        exit()
+
+                if args.adv == True:
+                    if os.path.exists('./adv/%s_%s_%s_val_ats_%s.p' % (args.d, args.model, args.attack, args.layer)):
+                        print('File exists in your directory')
+                        (test_ats, test_pred) = pickle.load(open('./adv/%s_%s_%s_val_ats_%s.p' % (args.d, args.model, args.attack, args.layer), 'rb'))                  
+                        print(test_ats.shape, test_pred.shape)
+                    else:
+                        print('Please load the activation trace of validation IMAGENET dataset')
+                        exit()
                 
                 from sklearn.decomposition import PCA  # using PCA to reduce the dimensions
                 pca = PCA(n_components=100)

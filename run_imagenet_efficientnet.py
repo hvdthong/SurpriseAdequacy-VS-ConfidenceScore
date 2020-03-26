@@ -284,7 +284,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
     assert args.d in ["mnist", "cifar", 'imagenet'], "Dataset should be either 'mnist' or 'cifar'"
     assert args.attack in ["fgsm", "bim", 'jsma', 'c+w'], "Dataset should be either 'fgsm', 'bim', 'jsma', 'c+w'"
-    assert args.ts ^ args.random_train ^ args.random_train_ats ^ args.random_train_label ^ args.val_ats ^ args.lsa ^ args.dsa ^ args.conf ^ args.true_label ^ args.pred_label ^ args.adv_lsa ^ args.adv_dsa ^ args.adv_conf, "Select either 'lsa' or 'dsa' or etc."
+    assert args.val_adv_ats ^ args.ts ^ args.random_train ^ args.random_train_ats ^ args.random_train_label ^ args.val_ats ^ args.lsa ^ args.dsa ^ args.conf ^ args.true_label ^ args.pred_label ^ args.adv_lsa ^ args.adv_dsa ^ args.adv_conf, "Select either 'lsa' or 'dsa' or etc."
     print(args)
 
     if args.d == 'imagenet':
@@ -390,13 +390,13 @@ if __name__ == '__main__':
             print('Loading validation IMAGENET dataset to create trace activation -----------------------------')
             test_ats, test_pred = list(), list()
             for i in range(args.val_start, args.val_end):
-                if os.path.exists('./adv/%s_%s_%s_val_ats_%s_%i.p' % (args.d, args.model, args.attack, int(i))):
+                if os.path.exists('./adv/%s_%s_%s_val_ats_%s_%i.p' % (args.d, args.model, args.attack, args.layer, int(i))):
                     ats, pred = pickle.load(open('./adv/%s_%s_%s_val_ats_%s_%i.p' % (args.d, args.model, args.attack, args.layer, i), 'rb'))
                     test_ats.append(ats)
                     test_pred.append(pred)
                     print(i, ats.shape, pred.shape)
                 else:
-                    x, y = np.load(open('./adv/%s_%s_%s_val_%i.npy' % (args.d, args.model, args.attack, int(i))))                                
+                    x, y = np.load(open('./adv/%s_%s_%s_val_%i.npy' % (args.d, args.model, args.attack, int(i)), encoding='utf-8'))                                
                     ats, pred = get_ats(model=model, dataset=x, layer_names=[args.layer])
                     print(i, x.shape, y.shape, ats.shape, pred.shape)
                     test_ats.append(ats)

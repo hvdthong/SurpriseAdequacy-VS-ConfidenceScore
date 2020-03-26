@@ -36,9 +36,11 @@ if __name__ == '__main__':
             if args.attack == 'fgsm':
                 attack = FastGradientMethod(classifier=classifier, eps=0.6, eps_step=0.6)
             if args.attack == 'bim':
-                attack = BasicIterativeMethod(classifier=classifier, eps=0.6, max_iter=15)
+                attack = BasicIterativeMethod(classifier=classifier, eps=0.6, max_iter=10)
             print('Generating adversarial examples----------------')
             print(i, x_test.shape, y_test.shape)
             x_adv = attack.generate(x=x_test)
             print('Saving adversarial examples----------------')
-            np.save('./adv/{}_{}_{}_val_{}.npy'.format(args.d, args.model, args.attack, i), x_adv)
+            # np.save('./adv/{}_{}_{}_val_{}.npy'.format(args.d, args.model, args.attack, i), x_adv)
+            print(x_adv.shape)
+            pickle.dump(x_adv, open('./adv/%s_%s_%s_val_%i.p' % (args.d, args.model, args.attack, i), 'wb'), protocol=4)

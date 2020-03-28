@@ -525,7 +525,10 @@ if __name__ == '__main__':
                         a_dot, train_ats[list(set(all_idx) - set(class_matrix[label]))]
                     )
                     dsa.append(a_dist / b_dist)
-                write_file('./metrics/%s_%s_dsa_%s.txt' % (args.d, args.model, args.layer), dsa)
+                if args.adv == False:
+                    write_file('./metrics/%s_%s_dsa_%s.txt' % (args.d, args.model, args.layer), dsa)
+                if args.adv == True:
+                    write_file('./metrics/%s_%s_adv_dsa_%s_%s.txt' % (args.d, args.model, args.attack, args.layer), dsa)
                 exit()
 
         if args.ts == True:
@@ -538,13 +541,23 @@ if __name__ == '__main__':
                     print('Please load the activation trace of training IMAGENET dataset')
                     exit()
 
-                if os.path.exists('./dataset_imagenet/%s_%s_val_ats_%s.p' % (args.d, args.model, args.layer)):
-                    print('File exists in your directory')
-                    (test_ats, test_pred) = pickle.load(open('./dataset_imagenet/%s_%s_val_ats_%s.p' % (args.d, args.model, args.layer), 'rb'))                  
-                    print(test_ats.shape, test_pred.shape)
-                else:
-                    print('Please load the activation trace of validation IMAGENET dataset')
-                    exit()
+                if args.adv == False:
+                    if os.path.exists('./dataset_imagenet/%s_%s_val_ats_%s.p' % (args.d, args.model, args.layer)):
+                        print('File exists in your directory')
+                        (test_ats, test_pred) = pickle.load(open('./dataset_imagenet/%s_%s_val_ats_%s.p' % (args.d, args.model, args.layer), 'rb'))                  
+                        print(test_ats.shape, test_pred.shape)
+                    else:
+                        print('Please load the activation trace of validation IMAGENET dataset')
+                        exit()
+
+                if args.adv == True:
+                    if os.path.exists('./adv/%s_%s_%s_val_ats_%s.p' % (args.d, args.model, args.attack, args.layer)):
+                        print('File exists in your directory')
+                        (test_ats, test_pred) = pickle.load(open('./adv/%s_%s_%s_val_ats_%s.p' % (args.d, args.model, args.attack, args.layer), 'rb'))                  
+                        print(test_ats.shape, test_pred.shape)
+                    else:
+                        print('Please load the activation trace of validation IMAGENET dataset')
+                        exit()
 
                 if os.path.exists('./dataset_imagenet/%s_%s_random_train_label.txt' % (args.d, args.model)):
                     print('File exists in your directory')
@@ -567,7 +580,11 @@ if __name__ == '__main__':
                 trust_model.fit(train_ats, train_label)
 
                 trust_score = trust_model.get_score(test_ats, test_pred).tolist()        
-                write_file('./metrics/%s_%s_ts_%s.txt' % (args.d, args.model, args.layer), trust_score)
+                
+                if args.adv == False:
+                    write_file('./metrics/%s_%s_ts_%s.txt' % (args.d, args.model, args.layer), trust_score)
+                if args.adv == True:
+                    write_file('./metrics/%s_%s_adv_ts_%s_%s.txt' % (args.d, args.model, args.attack, args.layer), trust_score)
 
 
 

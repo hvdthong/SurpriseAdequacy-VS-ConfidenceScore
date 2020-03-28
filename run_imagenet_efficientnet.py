@@ -465,7 +465,11 @@ if __name__ == '__main__':
                 for i, at in enumerate(tqdm(test_ats)):
                     label = test_pred[i]
                     test_lsa.append(np.asscalar(-kdes[label].logpdf(np.transpose(at))))
-                write_file('./metrics/%s_%s_lsa_%s.txt' % (args.d, args.model, args.layer), test_lsa)
+                
+                if args.adv == False:
+                    write_file('./metrics/%s_%s_lsa_%s.txt' % (args.d, args.model, args.layer), test_lsa)
+                if args.adv == True:
+                    write_file('./metrics/%s_%s_adv_lsa_%s_%s.txt' % (args.d, args.model, args.attack, args.layer), test_lsa)
                 exit()
 
         if args.dsa == True:

@@ -39,6 +39,8 @@ if __name__ == '__main__':
                 attack = BasicIterativeMethod(classifier=classifier, eps=0.6, max_iter=5)
             if args.attack == 'jsma':
                 attack = ProjectedGradientDescent(classifier=classifier, eps=0.6, max_iter=10)
+            if args.attack == 'c+w':
+                attack = CarliniL2Method(classifier=classifier)
 
             print('Generating adversarial examples----------------')
             print(i, x_test.shape, y_test.shape)

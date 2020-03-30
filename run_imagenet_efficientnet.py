@@ -310,6 +310,8 @@ if __name__ == '__main__':
             load_imagenet_val(path_img=path_img_val, path_info=path_val_info, args=args)
 
         if args.conf == True:
+            # import pdb
+            # pdb.set_trace()
             if args.adv == False:
                 for i in range(args.val_start, args.val_end):
                     x_test, y_test = pickle.load(open('./dataset/%s_%s_val_%i.p' % (args.d, args.model, i), 'rb'))
@@ -321,19 +323,20 @@ if __name__ == '__main__':
             if args.adv == True:
                 y_pred_all = list()
                 for i in range(args.val_start, args.val_end):
-                    if os.path.exists('./metrics/%s_%s_%s_adv_conf_val_%i.txt' % (args.d, args.model, args.attack, i)):
+                    if os.path.exists('./metrics/%s_%s_adv_conf_val_%s_%i.txt' % (args.d, args.model, args.attack, i)):
                         print('./adv/%s_%s_%s_val_%i.p' % (args.d, args.model, args.attack, i))
-                        y_pred_all += load_file('./metrics/%s_%s_%s_adv_conf_val_%i.txt' % (args.d, args.model, args.attack, i))
+                        y_pred_all += load_file('./metrics/%s_%s_adv_conf_val_%s_%i.txt' % (args.d, args.model, args.attack, i))
                         print(i, len(y_pred_all))
                     else:
                         print('./adv/%s_%s_%s_val_%i.p' % (args.d, args.model, args.attack, i))
                         x_test = pickle.load(open('./adv/%s_%s_%s_val_%i.p' % (args.d, args.model, args.attack, i), 'rb'))
                         y_pred = model.predict(x_test)
-                        
-                        y_pred_all += np.amax(y_pred, axis=1).tolist()
-                        print(i, x_test.shape, y_pred.shape, len(y_pred_all))
-                        write_file('./metrics/%s_%s_%s_adv_conf_val_%i.txt' % (args.d, args.model, args.attack, i), y_pred)
-                write_file('./metrics/%s_%s_%s_adv_conf.txt' % (args.d, args.model, args.attack), y_pred_all)
+                        y_pred = np.amax(y_pred, axis=1).tolist()
+                        y_pred_all += y_pred
+                        print(i, x_test.shape, len(y_pred), len(y_pred_all))
+                        write_file('./metrics/%s_%s_adv_conf_%s_val_%i.txt' % (args.d, args.model, args.attack, i), y_pred)
+                write_file('./metrics/%s_%s_adv_conf_%s.txt' % (args.d, args.model, args.attack), y_pred_all)
+            exit()
         
         if args.pred_label == True:
             for i in range(args.val_start, args.val_end):

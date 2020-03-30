@@ -96,7 +96,7 @@ if __name__ == '__main__':
     parser.add_argument("--attack", "-attack", help="Define Attack Type", type=str, default="fgsm")
     args = parser.parse_args()
 
-    assert args.d in ["mnist", "cifar"], "Dataset should be either 'mnist' or 'cifar'"
+    assert args.d in ["mnist", "cifar", 'imagenet'], "Dataset should be either 'mnist' or 'cifar'"
     assert args.alg in ["lr"], "Algorithm Classification"
     assert args.attack in ["fgsm", "bim", 'jsma', 'c+w'], "Dataset should be either 'fgsm', 'bim', 'jsma', 'c+w'"
     assert args.clf_dsa ^ args.clf_lsa ^ args.clf_conf ^ args.clf_ts ^ args.clf_confidnet, "Select classification based on metrics (i.e., dsa, lsa, conf, etc.)"
@@ -109,12 +109,18 @@ if __name__ == '__main__':
         elif args.d == 'cifar':
             x_adv = convert_list_number_to_float(load_file('./metrics/{}_adv_dsa_{}_activation_11.txt'.format(args.d, args.attack)))
             x_test = convert_list_number_to_float(load_file('./metrics/{}_dsa_activation_11.txt'.format(args.d)))
+        elif args.d == 'imagenet':
+            x_adv = convert_list_number_to_float(load_file('./metrics/{}_efficientnetb7_adv_dsa_{}_avg_pool.txt'.format(args.d, args.attack)))
+            x_test = convert_list_number_to_float(load_file('./metrics/{}_efficientnetb7_dsa_avg_pool.txt'.format(args.d)))
         classify_adv_based_metrics(x_adv=x_adv, x_test=x_test, args=args)
 
     if args.clf_conf:
         if args.d == 'mnist' or args.d == 'cifar':
             x_adv = convert_list_number_to_float(load_file('./metrics/{}_adv_conf_{}.txt'.format(args.d, args.attack)))
-            x_test = convert_list_number_to_float(load_file('./metrics/{}_conf.txt'.format(args.d)))        
+            x_test = convert_list_number_to_float(load_file('./metrics/{}_conf.txt'.format(args.d)))  
+        elif args.d == 'imagenet':
+            x_adv = convert_list_number_to_float(load_file('./metrics/{}_efficientnetb7_adv_conf_{}.txt'.format(args.d, args.attack)))
+            x_test = convert_list_number_to_float(load_file('./metrics/{}_efficientnetb7_conf.txt'.format(args.d)))      
         classify_adv_based_metrics(x_adv=x_adv, x_test=x_test, args=args)
 
     if args.clf_ts:        
@@ -124,6 +130,9 @@ if __name__ == '__main__':
         elif args.d == 'cifar':
             x_adv = convert_list_number_to_float(load_file('./metrics/{}_adv_ts_{}_activation_11.txt'.format(args.d, args.attack)))
             x_test = convert_list_number_to_float(load_file('./metrics/{}_ts_activation_11.txt'.format(args.d)))
+        elif args.d == 'imagenet':
+            x_adv = convert_list_number_to_float(load_file('./metrics/{}_efficientnetb7_adv_ts_{}_avg_pool.txt'.format(args.d, args.attack)))
+            x_test = convert_list_number_to_float(load_file('./metrics/{}_efficientnetb7_ts_avg_pool.txt'.format(args.d)))
         classify_adv_based_metrics(x_adv=x_adv, x_test=x_test, args=args)
 
     if args.clf_confidnet:

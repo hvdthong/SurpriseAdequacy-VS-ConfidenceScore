@@ -1,7 +1,7 @@
 import argparse
 import pickle
 from art.classifiers import KerasClassifier
-from art.attacks import FastGradientMethod, BasicIterativeMethod, SaliencyMapMethod, CarliniL2Method
+from art.attacks import FastGradientMethod, BasicIterativeMethod, SaliencyMapMethod, CarliniL2Method, ProjectedGradientDescent
 import efficientnet.keras as efn 
 import numpy as np
 
@@ -37,6 +37,8 @@ if __name__ == '__main__':
                 attack = FastGradientMethod(classifier=classifier, eps=0.6, eps_step=0.6)
             if args.attack == 'bim':
                 attack = BasicIterativeMethod(classifier=classifier, eps=0.6, max_iter=5)
+            if args.attack == 'jsma':
+                attack = ProjectedGradientDescent(classifier=classifier, eps=0.6, max_iter=10)
 
             print('Generating adversarial examples----------------')
             print(i, x_test.shape, y_test.shape)

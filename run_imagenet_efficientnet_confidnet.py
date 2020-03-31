@@ -66,7 +66,7 @@ if __name__ == '__main__':
         model.eval()  # eval mode (batchnorm uses moving mean/variance instead of mini-batch mean/variance)
         with torch.no_grad():
             confidnet_score, binary_predict_label = list(), list()
-            for i, (n, l) in enumerate(zip(img_name, img_label)):
+            for i, (n, l) in enumerate(zip(img_name, img_label)):                
                 img = Image.open(path_img_val + n)
                 img = convert_image(img, args)
                 if img is not None:

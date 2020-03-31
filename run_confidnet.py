@@ -10,6 +10,7 @@ import torchvision
 import torch.nn as nn
 import torchvision.models as models
 from torch.utils.model_zoo import load_url as load_state_dict_from_url
+from barbar import Bar
 
 
 CLIP_MIN = -0.5
@@ -104,12 +105,14 @@ def confidnet_score(model, test_loader):
     with torch.no_grad():
         correct, total = 0, 0
         uncertainties, pred, groundtruth = list(), list(), list()
-        for x, y in test_loader:
-            x, y = x.to(device), y.to(device, dtype=torch.long)            
+        for i, (x, y) in enumerate(Bar(test_loader)):
+            x, y = x.to(device), y.to(device, dtype=torch.long)
+            print(x.shape, y.shape)        
             outputs, uncertainty = model(x)
             pred.append(outputs)
             groundtruth.append(y)
             uncertainties.append(uncertainty)
+            exit()
         pred = torch.cat(pred).cpu().detach().numpy()
         predict_label = np.argmax(pred, axis=1)
         groundtruth = torch.cat(groundtruth).cpu().detach().numpy()

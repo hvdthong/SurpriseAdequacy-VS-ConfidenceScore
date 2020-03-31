@@ -38,7 +38,8 @@ if __name__ == '__main__':
             if args.attack == 'bim':
                 attack = BasicIterativeMethod(classifier=classifier, eps=0.6, max_iter=5)
             if args.attack == 'jsma':
-                attack = ProjectedGradientDescent(classifier=classifier, eps=0.6, max_iter=10)
+                # attack = ProjectedGradientDescent(classifier=classifier, eps=0.6, max_iter=5)
+                attack = SaliencyMapMethod(classifier=classifier, batch_size=16)
             if args.attack == 'c+w':
                 attack = CarliniL2Method(classifier=classifier)
 

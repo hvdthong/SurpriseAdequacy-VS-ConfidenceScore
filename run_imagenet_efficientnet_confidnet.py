@@ -65,8 +65,11 @@ if __name__ == '__main__':
     parser.add_argument(
         "--val_end", "-val_end", help="End validation index (only for IMAGENET dataset)", type=int, default=50
     )
+    parser.add_argument("--attack", "-attack", help="Define Attack Type", type=str, default="fgsm")
+
     args = parser.parse_args()
     assert args.d in ['imagenet'], "Dataset should be 'imagenet'"
+    assert args.attack in ["fgsm", "bim-a", "bim-b", "bim", "jsma", "c+w"], "Attack we should used"
     print(args)
 
     # Device configuration
@@ -79,41 +82,12 @@ if __name__ == '__main__':
             from efficientnet_pytorch_model.model import EfficientNet as efn
             model = efn.from_name('efficientnet-b7').to(args.device)
             model.load_state_dict(torch.load('./model_confidnet/%s_efficientnet-b7/train_uncertainty/epoch_1_acc-0.83_auc-0.82.pt' % (args.d)), strict=True)
-            args.image_size = 600
+            args.image_size = 600    
         
-        # if args.adv == False:
-        #     path_img_val = '../datasets/ilsvrc2012/images/val/'
-        #     path_val_info = '../datasets/ilsvrc2012/images/val.txt'
-        #     img_name, img_label = load_header_imagenet(load_file(path_val_info))
-                    
-        #     model.eval()  # eval mode (batchnorm uses moving mean/variance instead of mini-batch mean/variance)
-        #     with torch.no_grad():
-        #         confidnet_score, binary_predict_label = list(), list()
-        #         for i, (n, l) in enumerate(zip(img_name, img_label)):                
-        #             img = Image.open(path_img_val + n)
-        #             img = convert_image(img, args)
-        #             if img is not None:
-        #                 img = torch.Tensor(img).to(args.device)
-        #                 if len(img.shape) == 4 and img.shape[1] == 3:
-        #                     pred, uncertainty = model(img)                
-        #                     pred = pred.cpu().detach().numpy()
-        #                     predict_label = np.argmax(pred, axis=1)[0]
-        #                     if predict_label == int(l):
-        #                         binary_predict_label.append('True')
-        #                     else:
-        #                         binary_predict_label.append('False')
-                            
-        #                     confidnet_score.append(uncertainty.cpu().detach().numpy().flatten().tolist()[0])
-        #                     print(i, len(confidnet_score), len(binary_predict_label)) 
-        #             else:
-        #                 continue
-        #     write_file(path_file='./metrics/{}_{}_confidnet_score.txt'.format(args.d, args.model), data=confidnet_score)
-        #     write_file(path_file='./metrics/{}_{}_confidnet_accurate.txt'.format(args.d, args.model), data=binary_predict_label)
-
-        if args.adv == False:
             confidnet, binary_predict_label = list(), list()
             for i in range(args.val_start, args.val_end):
-                x_test, y_test = pickle.load(open('./dataset_imagenet/%s_%s_val_%i.p' % (args.d, args.model, i), 'rb'))                
+                if args.adv == False:
+                    x_test, y_test = pickle.load(open('./dataset_imagenet/%s_%s_val_%i.p' % (args.d, args.model, i), 'rb'))                
                 x_test = np.rollaxis(x_test, 3, 1)                  
 
                 x_test, y_test = torch.Tensor(x_test), torch.Tensor(y_test)
@@ -122,6 +96,8 @@ if __name__ == '__main__':
                 print('Running at i-th', i)
                 s, b = confidnet_score(model, test_loader, args)
                 confidnet += s 
-                binary_predict_label += b                                
-            write_file(path_file='./metrics/{}_{}_confidnet_score.txt'.format(args.d, args.model), data=confidnet)
-            write_file(path_file='./metrics/{}_{}_confidnet_accurate.txt'.format(args.d, args.model), data=binary_predict_label)
+                binary_predict_label += b
+
+            if args.adv == False:
+                write_file(path_file='./metrics/{}_{}_confidnet_score.txt'.format(args.d, args.model), data=confidnet)
+                write_file(path_file='./metrics/{}_{}_confidnet_accurate.txt'.format(args.d, args.model), data=binary_predict_label)        

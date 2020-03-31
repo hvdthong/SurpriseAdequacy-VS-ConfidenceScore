@@ -106,13 +106,11 @@ def confidnet_score(model, test_loader):
         correct, total = 0, 0
         uncertainties, pred, groundtruth = list(), list(), list()
         for i, (x, y) in enumerate(Bar(test_loader)):
-            x, y = x.to(device), y.to(device, dtype=torch.long)
-            print(x.shape, y.shape)        
+            x, y = x.to(device), y.to(device, dtype=torch.long)            
             outputs, uncertainty = model(x)
             pred.append(outputs)
             groundtruth.append(y)
-            uncertainties.append(uncertainty)
-            exit()
+            uncertainties.append(uncertainty)            
         pred = torch.cat(pred).cpu().detach().numpy()
         predict_label = np.argmax(pred, axis=1)
         groundtruth = torch.cat(groundtruth).cpu().detach().numpy()

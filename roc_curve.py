@@ -53,11 +53,14 @@ if __name__ == '__main__':
         lsa = convert_list_number_to_float(load_file('./metrics/%s_%s_lsa_avg_pool.txt' % (args.d, args.model)))
         dsa = convert_list_number_to_float(load_file('./metrics/%s_%s_dsa_avg_pool.txt' % (args.d, args.model)))
         ts = convert_list_number_to_float(load_file('./metrics/%s_%s_ts_avg_pool.txt' % (args.d, args.model)))
+
+        confidnet_accurate = convert_list_string_to_True_False(load_file('./metrics/%s_%s_confidnet_accurate.txt' % (args.d, args.model)))
+        confidnet_score = convert_list_number_to_float(load_file('./metrics/%s_%s_confidnet_score.txt' % (args.d, args.model)))
     
     binary_predicted_true = convert_predict_and_true_to_binary(predicted=predicted, true=true)   
 
     ################################################################################################################
-    if args.d == 'mnist' or args.d == 'cifar':
+    if args.d == 'mnist' or args.d == 'cifar' or args.d == 'imagenet':
         fpr_confidnet, tpr_confidnet, _ = roc_curve(confidnet_accurate, confidnet_score)
         roc_auc_confidnet = auc(fpr_confidnet, tpr_confidnet)
     ################################################################################################################
@@ -123,7 +126,7 @@ if __name__ == '__main__':
         plt.plot(fpr_lsa, tpr_lsa, 'c', label = 'AUC_lsa = %0.2f' % roc_auc_lsa)
         plt.plot(fpr_dsa, tpr_dsa, 'g', label = 'AUC_dsa = %0.2f' % roc_auc_dsa)
         plt.plot(fpr_ts, tpr_ts, 'm', label = 'AUC_ts = %0.2f' % roc_auc_ts) 
-        # plt.plot(fpr_confidnet, tpr_confidnet, 'k', label = 'AUC_confidnet = %0.2f' % roc_auc_confidnet) 
+        plt.plot(fpr_confidnet, tpr_confidnet, 'k', label = 'AUC_confidnet = %0.2f' % roc_auc_confidnet) 
         plt.legend(loc = 'lower right')
         plt.plot([0, 1], [0, 1],'r--')
         plt.xlim([0, 1])

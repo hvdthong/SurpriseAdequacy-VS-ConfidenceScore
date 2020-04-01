@@ -142,4 +142,7 @@ if __name__ == '__main__':
         elif args.d == 'cifar':
             x_adv = convert_list_number_to_float(load_file('./metrics/{}10_adv_confidnet_epoch_162_{}.txt'.format(args.d, args.attack)))
             x_test = convert_list_number_to_float(load_file('./metrics/{}10_confidnet_score_epoch_162.txt'.format(args.d)))
+        elif args.d == 'imagenet':
+            x_adv = convert_list_number_to_float(load_file('./metrics/{}_efficientnetb7_adv_confidnet_{}.txt'.format(args.d, args.attack)))
+            x_test = convert_list_number_to_float(load_file('./metrics/{}_efficientnetb7_confidnet_score.txt'.format(args.d)))
         classify_adv_based_metrics(x_adv=x_adv, x_test=x_test, args=args)

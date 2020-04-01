@@ -38,10 +38,10 @@ if __name__ == '__main__':
             if args.attack == 'bim':
                 attack = BasicIterativeMethod(classifier=classifier, eps=0.6, max_iter=5)
             if args.attack == 'jsma':
-                # attack = ProjectedGradientDescent(classifier=classifier, eps=0.6, max_iter=5)
-                attack = SaliencyMapMethod(classifier=classifier, batch_size=16)
+                attack = ProjectedGradientDescent(classifier=classifier, eps=0.6, max_iter=5)
+                # attack = SaliencyMapMethod(classifier=classifier)
             if args.attack == 'c+w':
-                attack = CarliniL2Method(classifier=classifier)
+                attack = CarliniL2Method(classifier=classifier, max_iter=5)
 
             print('Generating adversarial examples----------------')
             print(i, x_test.shape, y_test.shape)

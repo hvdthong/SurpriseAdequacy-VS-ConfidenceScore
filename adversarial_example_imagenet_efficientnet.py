@@ -1,7 +1,7 @@
 import argparse
 import pickle
 from art.classifiers import KerasClassifier
-from art.attacks import FastGradientMethod, BasicIterativeMethod, SaliencyMapMethod, CarliniL2Method, ProjectedGradientDescent
+from art.attacks import FastGradientMethod, BasicIterativeMethod, SaliencyMapMethod, CarliniL2Method, ProjectedGradientDescent, CarliniLInfMethod
 import efficientnet.keras as efn 
 import numpy as np
 
@@ -41,7 +41,8 @@ if __name__ == '__main__':
                 attack = ProjectedGradientDescent(classifier=classifier, eps=0.6, max_iter=5)
                 # attack = SaliencyMapMethod(classifier=classifier)
             if args.attack == 'c+w':
-                attack = CarliniL2Method(classifier=classifier, max_iter=5)
+                # attack = CarliniL2Method(classifier=classifier, max_iter=2)
+                attack = CarliniLInfMethod(classifier=classifier, batch_size=8, max_iter=2)
 
             print('Generating adversarial examples----------------')
             print(i, x_test.shape, y_test.shape)

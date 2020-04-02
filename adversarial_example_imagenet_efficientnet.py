@@ -42,7 +42,8 @@ if __name__ == '__main__':
                 # attack = SaliencyMapMethod(classifier=classifier)
             if args.attack == 'c+w':
                 # attack = CarliniL2Method(classifier=classifier, max_iter=2)
-                attack = CarliniLInfMethod(classifier=classifier, batch_size=1, max_iter=2)
+                # attack = CarliniLInfMethod(classifier=classifier, batch_size=1, max_iter=2)
+                attack = FastGradientMethod(classifier=classifier)
 
             print('Generating adversarial examples----------------')
             print(i, x_test.shape, y_test.shape)

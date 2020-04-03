@@ -334,7 +334,7 @@ if __name__ == '__main__':
                         y_pred = np.amax(y_pred, axis=1).tolist()
                         y_pred_all += y_pred
                         print(i, x_test.shape, len(y_pred), len(y_pred_all))
-                        write_file('./metrics/%s_%s_adv_conf_%s_val_%i.txt' % (args.d, args.model, args.attack, i), y_pred)
+                        # write_file('./metrics/%s_%s_adv_conf_%s_val_%i.txt' % (args.d, args.model, args.attack, i), y_pred)
                 write_file('./metrics/%s_%s_adv_conf_%s.txt' % (args.d, args.model, args.attack), y_pred_all)
             exit()
         

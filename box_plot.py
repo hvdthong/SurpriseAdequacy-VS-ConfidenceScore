@@ -64,12 +64,19 @@ if __name__ == '__main__':
     )
 
     args = parser.parse_args()
-    assert args.d in ["mnist", "cifar"], "Dataset should be either 'mnist' or 'cifar'"
+    assert args.d in ["mnist", "cifar", 'imagenet'], "Dataset should be either 'mnist' or 'cifar'"
     assert args.lsa ^ args.dsa ^ args.conf, "Select either 'lsa' or 'dsa' or etc."
     print(args)
 
-    predicted = load_file('./metrics/%s_pred_label.txt' % (args.d))
-    true = load_file('./metrics/%s_true_label.txt' % (args.d))
+    if args.d == 'imagenet':
+        print('hello')
+        exit()
+    elif args.d == 'mnist' or 'cifar':
+        predicted = load_file('./metrics/%s_pred_label.txt' % (args.d))
+        true = load_file('./metrics/%s_true_label.txt' % (args.d))
+    else:
+        print('wrong dataset')
+        exit()
     binary_predicted_true = convert_predict_and_true_to_binary(predicted=predicted, true=true)
 
     if args.d == 'mnist' and args.lsa:

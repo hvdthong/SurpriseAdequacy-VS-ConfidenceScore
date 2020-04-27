@@ -69,8 +69,8 @@ if __name__ == '__main__':
     print(args)
 
     if args.d == 'imagenet':
-        print('hello')
-        exit()
+        predicted = load_file('./metrics/%s_efficientnetb7_pred_label.txt' % (args.d))
+        true = load_file('./metrics/%s_efficientnetb7_true_label.txt' % (args.d))
     elif args.d == 'mnist' or 'cifar':
         predicted = load_file('./metrics/%s_pred_label.txt' % (args.d))
         true = load_file('./metrics/%s_true_label.txt' % (args.d))
@@ -78,6 +78,12 @@ if __name__ == '__main__':
         print('wrong dataset')
         exit()
     binary_predicted_true = convert_predict_and_true_to_binary(predicted=predicted, true=true)
+
+    if args.d == 'imagenet' and args.lsa:
+        score_ = convert_list_number_to_float(load_file('./metrics/%s_efficientnetb7_lsa_avg_pool.txt' % (args.d)))
+
+    if args.d == 'imagenet' and args.dsa:
+        score_ = convert_list_number_to_float(load_file('./metrics/%s_efficientnetb7_dsa_avg_pool.txt' % (args.d)))
 
     if args.d == 'mnist' and args.lsa:
         score_ = convert_list_number_to_float(load_file('./metrics/%s_lsa_activation_3.txt' % (args.d)))

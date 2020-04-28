@@ -28,6 +28,12 @@ def box_plot_metrics(binary_predicted_true, score, args):
                     correct.append(s)
                 else:
                     incorrect.append(s)
+        elif args.d == 'imagenet' and args.lsa:
+            if s <= 500:
+                if b == 1:
+                    correct.append(s)
+                else:
+                    incorrect.append(s)
         else:
             if b == 1:
                 correct.append(s)

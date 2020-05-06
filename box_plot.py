@@ -53,7 +53,10 @@ def box_plot_metrics(binary_predicted_true, score, args):
     ax.set_title('{} - {}'.format(metric, args.d))
     ax.boxplot(data)
     ax.set_xticklabels(['Correct', 'Incorrect'])
-    plt.savefig('./results/{}_{}_box_plot.jpg'.format(args.d, metric))
+    if args.d == 'openstack' or args.d == 'qt':
+        plt.savefig('./results/defect_{}_{}_box_plot.jpg'.format(args.d, metric))
+    else:
+        plt.savefig('./results/{}_{}_box_plot.jpg'.format(args.d, metric))
 
 
 if __name__ == '__main__':
@@ -70,20 +73,28 @@ if __name__ == '__main__':
     )
 
     args = parser.parse_args()
-    assert args.d in ["mnist", "cifar", 'imagenet'], "Dataset should be either 'mnist' or 'cifar'"
+    assert args.d in ["mnist", "cifar", 'imagenet', 'openstack', 'qt'], "Dataset should be either 'mnist' or 'cifar'"
     assert args.lsa ^ args.dsa ^ args.conf, "Select either 'lsa' or 'dsa' or etc."
     print(args)
 
     if args.d == 'imagenet':
         predicted = load_file('./metrics/%s_efficientnetb7_pred_label.txt' % (args.d))
         true = load_file('./metrics/%s_efficientnetb7_true_label.txt' % (args.d))
-    elif args.d == 'mnist' or 'cifar':
+    elif args.d == 'mnist' or args.d == 'cifar':
         predicted = load_file('./metrics/%s_pred_label.txt' % (args.d))
         true = load_file('./metrics/%s_true_label.txt' % (args.d))
+    elif args.d == 'openstack' or args.d == 'qt':
+        predicted = load_file('./metrics/defect_%s_pred_label.txt' % (args.d))
+        true = load_file('./metrics/defect_%s_true_label.txt' % (args.d))
     else:
         print('wrong dataset')
         exit()
     binary_predicted_true = convert_predict_and_true_to_binary(predicted=predicted, true=true)
+
+    if (args.d == 'openstack' or args.d == 'qt') and args.lsa:
+        score_ = convert_list_number_to_float(load_file('./metrics/defect_%s_lsa.txt' % (args.d)))
+    if (args.d == 'openstack' or args.d == 'qt') and args.dsa:
+        score_ = convert_list_number_to_float(load_file('./metrics/defect_%s_dsa.txt' % (args.d)))
 
     if args.d == 'imagenet' and args.lsa:
         score_ = convert_list_number_to_float(load_file('./metrics/%s_efficientnetb7_lsa_avg_pool.txt' % (args.d)))

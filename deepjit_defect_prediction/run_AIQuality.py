@@ -260,12 +260,41 @@ def get_trustscore(data, model):
     trust_score = trust_model.get_score(test_ats, test_pred).tolist()
     return trust_score
 
+def get_confidnet(data, model):
+    train, test = data
+    with torch.no_grad():
+        model.eval()  # since we use drop out
+        scores = list()
+        for batch in test:
+            pad_msg, pad_code, labels = batch
+            if torch.cuda.is_available():
+                pad_msg, pad_code = torch.tensor(pad_msg).cuda(), torch.tensor(pad_code).cuda()
+            else:
+                pad_msg, pad_code = torch.tensor(pad_msg).long(), torch.tensor(pad_code).long()
+
+            if torch.cuda.is_available():
+                predict, uncertainty  = model.forward(pad_msg, pad_code)
+                predict = predict.cpu().detach().numpy().tolist()
+            else:
+                predict, uncertainty = model.forward(pad_msg, pad_code)
+                predict = predict.detach().numpy().tolist()
+            scores += predict    
+    return scores
 
 def get_AIreliable(dataset, params):
-    if dataset == 'openstack':
-        path_model = './snapshot/2020-05-04_09-43-53/epoch_50.pt'
-    if dataset == 'qt':
-        path_model = './snapshot/2020-05-04_11-16-52/epoch_15.pt'
+    if params.type_reliable != 'confidnet':
+        if dataset == 'openstack':
+            path_model = './snapshot/2020-05-04_09-43-53/epoch_50.pt'
+        if dataset == 'qt':
+            path_model = './snapshot/2020-05-04_11-16-52/epoch_15.pt'
+    elif params.type_reliable == 'confidnet':
+        if dataset == 'openstack':
+            path_model = './snapshot/2020-05-17_14-11-51/epoch_15.pt'
+        if dataset == 'qt':
+            path_model = './snapshot/2020-05-17_14-41-24/epoch_10.pt'
+    else:
+        print('You need to give correct name of reliable method')
+        exit()
 
     batches_train, batches_test, params = get_batches_params(dataset=dataset, params=params)
     print(params)
@@ -279,7 +308,7 @@ def get_AIreliable(dataset, params):
     else:
         print('You need to give correct name of reliable method')
         exit()
-        
+
     if torch.cuda.is_available():
         model = model.cuda()
     model.load_state_dict(torch.load(path_model))
@@ -296,6 +325,8 @@ def get_AIreliable(dataset, params):
         score = get_dsa(data=(batches_train, batches_test), model=model)
     if params.type_reliable == 'ts':
         score = get_trustscore(data=(batches_train, batches_test), model=model)
+    if params.type_reliable == 'confidnet':
+        score = get_confidnet(data=(batches_train, batches_test), model=model)
     write_file('../metrics/defect_%s_%s.txt' % (dataset, params.type_reliable), data=score)
                 
 
@@ -318,7 +349,8 @@ if __name__ == '__main__':
     # input_option.type_reliable = 'pred_label'
     # input_option.type_reliable = 'lsa'
     # input_option.type_reliable = 'dsa'
-    input_option.type_reliable = 'ts'
+    # input_option.type_reliable = 'ts'
+    input_option.type_reliable = 'confidnet'
     get_AIreliable(dataset=dataset, params=input_option)
             
     

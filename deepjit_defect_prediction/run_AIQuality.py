@@ -289,7 +289,7 @@ def get_AIreliable(dataset, params):
             path_model = './snapshot/2020-05-04_11-16-52/epoch_15.pt'
     elif params.type_reliable == 'confidnet':
         if dataset == 'openstack':
-            path_model = './snapshot/2020-05-17_14-11-51/epoch_15.pt'
+            path_model = './snapshot/2020-05-17_14-11-51/epoch_10.pt'
         if dataset == 'qt':
             path_model = './snapshot/2020-05-17_14-41-24/epoch_10.pt'
     else:
@@ -339,8 +339,8 @@ if __name__ == '__main__':
 
     # get_best_model(dataset=dataset, params=input_option)
 
-    # dataset = 'openstack'
-    dataset = 'qt'
+    dataset = 'openstack'
+    # dataset = 'qt'
 
     input_option = read_args().parse_args()
     input_help = read_args().print_help()

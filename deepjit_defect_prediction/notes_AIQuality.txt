@@ -8,7 +8,7 @@ openstack
 -- train classification
 2020-05-17_09-37-57: openstack (./snapshot/2020-05-17_09-37-57/epoch_55.pt)
 -- train confidnet
-2020-05-17_14-11-51: openstack (./snapshot/2020-05-17_14-11-51/epoch_15.pt)
+2020-05-17_14-11-51: openstack (./snapshot/2020-05-17_14-11-51/epoch_10.pt)
 
 qt
 -- train classification

@@ -62,6 +62,7 @@ if __name__ == '__main__':
         true = load_file('./metrics/defect_%s_true_label.txt' % (args.d))
         confidence = convert_list_number_to_float(load_file('./metrics/defect_%s_conf.txt' % (args.d)))
         ts = convert_list_number_to_float(load_file('./metrics/defect_%s_ts.txt' % (args.d)))
+        confidnet_score = convert_list_number_to_float(load_file('./metrics/defect_%s_confidnet.txt' % (args.d)))
 
     if args.d == 'openstack' or args.d == 'qt':
         lsa = convert_list_number_to_float(load_file('./metrics/defect_%s_lsa.txt' % (args.d)))
@@ -82,6 +83,10 @@ if __name__ == '__main__':
     ################################################################################################################
     fpr_conf, tpr_conf, _ = roc_curve(binary_predicted_true, confidence)
     roc_auc_conf = auc(fpr_conf, tpr_conf)
+
+    if args.d == 'openstack' or args.d == 'qt':
+        fpr_confidnet, tpr_confidnet, _ = roc_curve(binary_predicted_true, confidnet_score)
+        roc_auc_confidnet = auc(fpr_confidnet, tpr_confidnet)
     ################################################################################################################
     
     ################################################################################################################
@@ -129,7 +134,7 @@ if __name__ == '__main__':
         plt.plot(fpr_lsa, tpr_lsa, 'c', label = 'AUC_lsa = %0.2f' % roc_auc_lsa)
         plt.plot(fpr_dsa, tpr_dsa, 'g', label = 'AUC_dsa = %0.2f' % roc_auc_dsa) 
         plt.plot(fpr_ts, tpr_ts, 'm', label = 'AUC_ts = %0.2f' % roc_auc_ts) 
-        # plt.plot(fpr_confidnet, tpr_confidnet, 'k', label = 'AUC_confidnet = %0.2f' % roc_auc_confidnet) 
+        plt.plot(fpr_confidnet, tpr_confidnet, 'k', label = 'AUC_confidnet = %0.2f' % roc_auc_confidnet) 
         plt.legend(loc = 'lower right')
         plt.plot([0, 1], [0, 1],'r--')
         plt.xlim([0, 1])

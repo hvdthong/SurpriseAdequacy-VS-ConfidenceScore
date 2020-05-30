@@ -38,16 +38,16 @@ if __name__ == '__main__':
             if args.attack == 'bim':
                 attack = BasicIterativeMethod(classifier=classifier, eps=0.6, max_iter=5)
             if args.attack == 'jsma':
-                attack = ProjectedGradientDescent(classifier=classifier, eps=0.6, max_iter=5)
-                # attack = SaliencyMapMethod(classifier=classifier)
+                # attack = ProjectedGradientDescent(classifier=classifier, eps=0.6, max_iter=5)
+                attack = SaliencyMapMethod(classifier=classifier)
             if args.attack == 'c+w':
-                # attack = CarliniL2Method(classifier=classifier, max_iter=2)
+                attack = CarliniL2Method(classifier=classifier, max_iter=2)
                 # attack = CarliniLInfMethod(classifier=classifier, batch_size=1, max_iter=2)
-                attack = FastGradientMethod(classifier=classifier)
+                # attack = FastGradientMethod(classifier=classifier)
 
             print('Generating adversarial examples----------------')
             print(i, x_test.shape, y_test.shape)
             x_adv = attack.generate(x=x_test)
             print('Saving adversarial examples----------------')            
             print(x_adv.shape)
-            pickle.dump(x_adv, open('./adv/%s_%s_%s_val_%i.p' % (args.d, args.model, args.attack, i), 'wb'), protocol=4)
+            pickle.dump(x_adv, open('./adv_imagenet/%s_%s_%s_val_%i.p' % (args.d, args.model, args.attack, i), 'wb'), protocol=4)

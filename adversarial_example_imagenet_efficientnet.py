@@ -41,13 +41,21 @@ if __name__ == '__main__':
                 # attack = ProjectedGradientDescent(classifier=classifier, eps=0.6, max_iter=5)
                 attack = SaliencyMapMethod(classifier=classifier)
             if args.attack == 'c+w':
-                attack = CarliniL2Method(classifier=classifier, max_iter=2)
+                attack = CarliniL2Method(classifier=classifier)
                 # attack = CarliniLInfMethod(classifier=classifier, batch_size=1, max_iter=2)
                 # attack = FastGradientMethod(classifier=classifier)
-
+            from datetime import datetime
+            now = datetime.now()
+            current_time_after = now.strftime("%H:%M:%S")
+            print("Current Time After=", current_time_after)
+            
             print('Generating adversarial examples----------------')
             print(i, x_test.shape, y_test.shape)
             x_adv = attack.generate(x=x_test)
             print('Saving adversarial examples----------------')            
             print(x_adv.shape)
             pickle.dump(x_adv, open('./adv_imagenet/%s_%s_%s_val_%i.p' % (args.d, args.model, args.attack, i), 'wb'), protocol=4)
+
+            now = datetime.now()
+            current_time_before = now.strftime("%H:%M:%S")
+            print("Current Time Before=", current_time_before)

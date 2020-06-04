@@ -149,7 +149,7 @@ if __name__ == '__main__':
 
         x_train = x_train.astype("float32")
         x_train = (x_train / 255.0) - (1.0 - CLIP_MAX)
-        x_adv = np.load('./adv/%s_%s.npy' % (args.d, args.attack))        
+        x_adv = np.load('./adv/%s_%s.npy' % (args.d, args.attack))
 
         y_pred = np.argmax(model.predict(x_adv), axis=1)
 

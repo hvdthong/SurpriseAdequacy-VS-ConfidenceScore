@@ -66,6 +66,38 @@ def classify_adv_based_metrics(x_adv, x_test, args):
             print('ROC-AUC of dataset {} with attack {} for confidnet score: {}'.format(args.d, args.attack, roc_auc))
         break
 
+def classify_adv_based_metrics_update(x_adv, x_test, args):
+    """Using n-cross-validation to calculate the performance of the adversarial examples based on different metrics
+    Metrics (i.e, likelihood-based, distance-based, confidence score, etc.)
+
+    Args:
+        x_adv (list): List of metrics of adversarial examples 
+        x_test (list): List of metrics of test data 
+        args: Keyboard args.
+
+    Returns:
+        roc-auc (float): The performance of our classifier in term of roc curve
+    """
+    y = generate_labeled_data(x_adv=x_adv, x_test=x_test)
+    x = np.array(x_adv + x_test)
+    x = np.reshape(x, (x.shape[0], 1))
+    skf = StratifiedKFold(n_splits=args.n_fold, random_state=0, shuffle=True)
+    roc_auc = list()
+    for train_index, test_index in skf.split(x, y):
+        x_train, x_test = x[train_index], x[test_index]  # using 90% percent of data for testing, only 10% for training
+        y_train, y_test = y[train_index], y[test_index]        
+        roc_auc.append(roc_auc_classify(x=(x_train, x_test), y=(y_train, y_test), args=args))
+    
+    print(roc_auc)
+    roc_auc = sum(roc_auc) / len(roc_auc) 
+    if args.clf_dsa:
+        print('ROC-AUC of dataset {} with attack {} for distance-based surprise adequacy (dsa): {}'.format(args.d, args.attack, roc_auc))
+    if args.clf_conf:
+        print('ROC-AUC of dataset {} with attack {} for confidence score: {}'.format(args.d, args.attack, roc_auc))
+    if args.clf_ts:
+        print('ROC-AUC of dataset {} with attack {} for trust score: {}'.format(args.d, args.attack, roc_auc))
+    if args.clf_confidnet:
+        print('ROC-AUC of dataset {} with attack {} for confidnet score: {}'.format(args.d, args.attack, roc_auc))    
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -112,7 +144,8 @@ if __name__ == '__main__':
         elif args.d == 'imagenet':
             x_adv = convert_list_number_to_float(load_file('./metrics/{}_efficientnetb7_adv_dsa_{}_avg_pool.txt'.format(args.d, args.attack)))
             x_test = convert_list_number_to_float(load_file('./metrics/{}_efficientnetb7_dsa_avg_pool.txt'.format(args.d)))
-        classify_adv_based_metrics(x_adv=x_adv, x_test=x_test, args=args)
+        # classify_adv_based_metrics(x_adv=x_adv, x_test=x_test, args=args)
+        classify_adv_based_metrics_update(x_adv=x_adv, x_test=x_test, args=args)
 
     if args.clf_conf:
         if args.d == 'mnist' or args.d == 'cifar':
@@ -121,7 +154,8 @@ if __name__ == '__main__':
         elif args.d == 'imagenet':
             x_adv = convert_list_number_to_float(load_file('./metrics/{}_efficientnetb7_adv_conf_{}.txt'.format(args.d, args.attack)))
             x_test = convert_list_number_to_float(load_file('./metrics/{}_efficientnetb7_conf.txt'.format(args.d)))      
-        classify_adv_based_metrics(x_adv=x_adv, x_test=x_test, args=args)
+        # classify_adv_based_metrics(x_adv=x_adv, x_test=x_test, args=args)
+        classify_adv_based_metrics_update(x_adv=x_adv, x_test=x_test, args=args)
 
     if args.clf_ts:        
         if args.d == 'mnist':
@@ -133,7 +167,8 @@ if __name__ == '__main__':
         elif args.d == 'imagenet':
             x_adv = convert_list_number_to_float(load_file('./metrics/{}_efficientnetb7_adv_ts_{}_avg_pool.txt'.format(args.d, args.attack)))
             x_test = convert_list_number_to_float(load_file('./metrics/{}_efficientnetb7_ts_avg_pool.txt'.format(args.d)))
-        classify_adv_based_metrics(x_adv=x_adv, x_test=x_test, args=args)
+        # classify_adv_based_metrics(x_adv=x_adv, x_test=x_test, args=args)
+        classify_adv_based_metrics_update(x_adv=x_adv, x_test=x_test, args=args)
 
     if args.clf_confidnet:
         if args.d == 'mnist':
@@ -145,4 +180,5 @@ if __name__ == '__main__':
         elif args.d == 'imagenet':
             x_adv = convert_list_number_to_float(load_file('./metrics/{}_efficientnetb7_adv_confidnet_{}.txt'.format(args.d, args.attack)))
             x_test = convert_list_number_to_float(load_file('./metrics/{}_efficientnetb7_confidnet_score.txt'.format(args.d)))
-        classify_adv_based_metrics(x_adv=x_adv, x_test=x_test, args=args)
+        # classify_adv_based_metrics(x_adv=x_adv, x_test=x_test, args=args)
+        classify_adv_based_metrics_update(x_adv=x_adv, x_test=x_test, args=args)

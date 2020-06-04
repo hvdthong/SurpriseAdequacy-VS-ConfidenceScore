@@ -310,7 +310,7 @@ def _get_kdes(train_ats, train_pred, class_matrix, args):
             kdes[label] = gaussian_kde(refined_ats)
             # import pdb; pdb.set_trace()
             # print(gaussian_kde(refined_ats))
-        import pdb; pdb.set_trace()
+        # import pdb; pdb.set_trace()
     else:
         col_vectors = np.transpose(train_ats)
         for i in range(col_vectors.shape[0]):
@@ -370,7 +370,7 @@ def fetch_lsa(model, x_train, x_target, target_name, layer_names, args):
     if args.is_classification:
         for i, at in enumerate(tqdm(target_ats)):
             label = target_pred[i]
-            import pdb; pdb.set_trace()
+            # import pdb; pdb.set_trace()
             kde = kdes[label]
             lsa.append(_get_lsa(kde, at, removed_cols, args))
     else:

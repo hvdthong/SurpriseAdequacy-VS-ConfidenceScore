@@ -77,17 +77,17 @@ if __name__ == '__main__':
     if args.attack == 'fgsm':
         attack = FastGradientMethod(classifier=classifier, eps=0.6, eps_step=0.6, batch_size=64)
 
-    if args.attack == 'bim':
+    if args.attack == 'bim':       
         if args.d == 'imagenet':
             attack = BasicIterativeMethod(classifier=classifier, eps=0.6, batch_size=64, max_iter=25)
         else:    
             attack = BasicIterativeMethod(classifier=classifier, eps=0.6, batch_size=64)
 
     if args.attack == 'jsma':
-        attack = SaliencyMapMethod(classifier=classifier, batch_size=64)
+        attack = SaliencyMapMethod(classifier=classifier, batch_size=64)          
 
     if args.attack == 'c+w':
-        attack = CarliniL2Method(classifier=classifier, batch_size=64)
+        attack = CarliniL2Method(classifier=classifier, batch_size=64)        
     
     # generating adversarial of the testing dataset and save it to the folder './adv'
     if args.d == 'mnist' or args.d == 'cifar':

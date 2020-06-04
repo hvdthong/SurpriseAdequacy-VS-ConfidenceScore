@@ -182,3 +182,6 @@ if __name__ == '__main__':
             x_test = convert_list_number_to_float(load_file('./metrics/{}_efficientnetb7_confidnet_score.txt'.format(args.d)))
         # classify_adv_based_metrics(x_adv=x_adv, x_test=x_test, args=args)
         classify_adv_based_metrics_update(x_adv=x_adv, x_test=x_test, args=args)
+
+        # cifar10_adv_confidnet_epoch_162_jsma
+        # cifar_adv_conf_jsma

@@ -135,8 +135,10 @@ if __name__ == '__main__':
     parser.add_argument(
         "--model", "-model", help="Model for IMAGENET dataset", type=str, default='vgg16'
     )
+    parser.add_argument("--attack", "-attack", help="Define Attack Type", type=str, default="fgsm")
     args = parser.parse_args()
     assert args.d in ["mnist", "cifar", 'imagenet'], "Dataset should be either 'mnist' or 'cifar' or 'imagenet'"
+    assert args.attack in ["fgsm", "bim", 'jsma', 'c+w'], "Dataset should be either 'fgsm', 'bim', 'jsma', 'c+w'"
     print(args)
 
     # Device configuration
@@ -210,3 +212,31 @@ if __name__ == '__main__':
 
             for param in model.named_parameters():
                 print(param[0], param[1].requires_grad)
+
+    if args.adv_confidnet:
+        x_adv = np.load('./adv/%s_%s.npy' % (args.d, args.attack))
+        
+        # Device configuration
+        device = torch.device('cpu')
+
+        if args.d == 'mnist':
+            model = SmallConvNetMNISTSelfConfidClassic().to(device)
+            model.load_state_dict(torch.load('./model_confidnet/%s/train_uncertainty/epoch_950_acc-0.99_auc-0.92.pt' % (args.d)))
+
+        if args.d == 'cifar':
+            model = VGG16SelfConfidClassic().to(device)
+            model.load_state_dict(torch.load('./model_confidnet/%s/train_uncertainty/epoch_950_acc-0.84_auc-0.87.pt' % (args.d)))
+        
+        nrow = x_adv.shape[0]
+        model.eval()  # eval mode (batchnorm uses moving mean/variance instead of mini-batch mean/variance)
+        with torch.no_grad():
+            correct, total = 0, 0
+            uncertainties = list()
+            for i in range(0, nrow):
+                x_i = torch.Tensor(x_adv[i, :, :, :].reshape(-1, 1, 28, 28))
+                outputs, uncertainty = model(x_i)                
+                uncertainties.append(uncertainty)                        
+            uncertainties = torch.cat(uncertainties).cpu().detach().numpy().flatten()            
+            uncertainties = list(uncertainties)
+
+        write_file(path_file='./metrics/{}_adv_confidnet_epoch_11_{}.txt'.format(args.d, args.attack), data=uncertainties)
